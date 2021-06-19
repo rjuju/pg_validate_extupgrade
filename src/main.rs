@@ -1,3 +1,13 @@
+/*----------------------------------------------------------------------------
+ * Author: Julien Rouhaud
+ * Copyright: Copyright (c) 2021 : Julien Rouhaud - All rights reserved
+ *---------------------------------------------------------------------------*/
+use std::process;
+use pg_validate_extupgrade::App;
+
 fn main() {
-    println!("Hello, world!");
+    App::new().run().unwrap_or_else(|e| {
+		println!("{}", e);
+		process::exit(1);
+	})
 }
