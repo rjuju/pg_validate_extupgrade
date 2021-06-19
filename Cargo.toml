@@ -1,0 +1,9 @@
+[package]
+name = "pg_validate_extupgrade"
+version = "0.1.0"
+authors = ["Julien Rouhaud <julien.rouhaud@free.fr>"]
+edition = "2018"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
