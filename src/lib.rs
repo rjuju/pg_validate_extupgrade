@@ -15,6 +15,13 @@ use clap::{
 
 use postgres::{Client, NoTls};
 
+mod extension;
+use crate::extension::Extension;
+
+#[macro_use]
+mod compare;
+use crate::compare::Compare;
+
 pub struct App {
 	conninfo: Conninfo,
 	extname: String,
@@ -165,6 +172,29 @@ impl App {
 		}
 	}
 
+	fn created(&self, client: &mut postgres::Transaction) {
+			if let Err(e) = client.simple_query(
+				&format!("CREATE EXTENSION {} VERSION '{}'",
+					self.extname,
+					self.to),
+			) {
+				App::error(e.to_string());
+			};
+	}
+
+	fn updated(&self, client: &mut postgres::Transaction) {
+			if let Err(e) = client.simple_query(
+				&format!("DROP EXTENSION {e};\
+					CREATE EXTENSION {e} VERSION '{}'; \
+					ALTER EXTENSION {e} UPDATE TO '{}'",
+					self.from,
+					self.to,
+					e = self.extname,)
+			) {
+				App::error(e.to_string());
+			};
+	}
+
 	pub fn run(&self) -> Result<(), String> {
 		let mut client = match self.connect() {
 			Ok(c) => c,
@@ -173,9 +203,25 @@ impl App {
 
 		self.check_ext(&mut client);
 
-		println!("FIXME");
+		let mut transaction = client.transaction()
+			.expect("Could not start a transaction");
 
-		Ok(())
+		self.created(&mut transaction);
+		let from = Extension::snapshot(&self.extname, &mut transaction);
+
+		self.updated(&mut transaction);
+		let to = Extension::snapshot(&self.extname, &mut transaction);
+
+		let mut res = String::new();
+		from.compare(&to, &mut res);
+
+		transaction.rollback().expect("Could not rollback the transaction");
+
+		if res == "" {
+			Ok(())
+		} else {
+			Err(res)
+		}
 	}
 }
 
