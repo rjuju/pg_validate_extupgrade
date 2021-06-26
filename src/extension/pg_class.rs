@@ -3,20 +3,26 @@
  * Copyright: Copyright (c) 2021 : Julien Rouhaud - All rights reserved
  *---------------------------------------------------------------------------*/
 use std::collections::HashMap;
-use postgres::Transaction;
+use postgres::{Row, Transaction};
 
-use crate::{
-	compare::*,
-	DbStruct,
+use crate::{compare::*,
+	CompareStruct, DbStruct,
 	extension::pg_attribute::Attribute,
+	pgtype::*,
 };
 
 DbStruct! {
-	Relation:relname {
-		attributes: Vec<Attribute> {PG_NO_CATALOG},
+	PgClass:relname:Relation {
 		relname: String,
-		relkind: String,
-		relpersistence: String,
+		relkind: Char,
+		relpersistence: Char,
+	}
+}
+
+CompareStruct! {
+	Relation {
+		attributes: Vec<Attribute>,
+		class: PgClass,
 	}
 }
 
@@ -29,7 +35,7 @@ impl Relation {
 		for oid in oids {
 			match snap_one_class(client, oid, pgver) {
 				Some(r) => {
-					rels.insert(r.relname.clone(), r);
+					rels.insert(r.ident.clone(), r);
 				},
 				None => {}
 			}
@@ -44,38 +50,22 @@ fn snap_one_class(client: &mut Transaction, oid: u32, pgver: u32)
 {
 	let sql = format!("SELECT {} \
 		FROM pg_class c \
-		WHERE oid = {}",
-		Relation::tlist(pgver).join(", "),
-		oid);
+		WHERE oid = $1",
+		PgClass::tlist(pgver).join(", "),
+	);
 
-	let rows = client.simple_query(&sql)
+	let row = client.query_one(&sql[..], &[&oid])
 		.expect("Could not get pg_class row");
 
-	if rows.len() != 2 {
-		println!("Could not find pg_class entry for oid {}", oid);
-		return None;
-	}
-
-	let rel = match &rows[0] {
-		postgres::SimpleQueryMessage::Row(r) => r,
-		_ => {
-			println!("should not happen");
-			std::process::exit(1);
-		}
-	};
-
-	let relname = String::from(rel.get("relname").unwrap());
-	let relkind = String::from(rel.get("relkind").unwrap());
-	let relpersistence = String::from(rel.get("relpersistence").unwrap());
+	let class = PgClass::from_row(&row);
 
 	let atts = Attribute::snapshot(client, oid, pgver);
 
 	Some(
 		Relation {
-			relname,
+			ident: class.relname.clone(),
 			attributes: atts,
-			relkind,
-			relpersistence,
+			class,
 		}
 	)
 }

@@ -2,7 +2,7 @@
  * Author: Julien Rouhaud
  * Copyright: Copyright (c) 2021 : Julien Rouhaud - All rights reserved
  *---------------------------------------------------------------------------*/
-use postgres::Transaction;
+use postgres::{Row, Transaction};
 
 use crate::{
 	compare::*,
@@ -10,7 +10,7 @@ use crate::{
 };
 
 DbStruct! {
-	Attribute:attname {
+	Attribute:attname:Attribute {
 		attname: String,
 	}
 }
@@ -25,28 +25,17 @@ impl Attribute {
 			FROM pg_attribute a \
 			WHERE attnum > 0 \
 			AND NOT attisdropped \
-			AND attrelid = {} \
+			AND attrelid = $1 \
 			ORDER BY attnum",
 			Attribute::tlist(pgver).join(", "),
-			relid,
 		);
 
-		let rows = client.simple_query(&sql)
+		let rows = client.query(&sql[..], &[&relid])
 			.expect("Could net get pg_attribute rows");
 
 		for row in &rows {
-			match row {
-				postgres::SimpleQueryMessage::Row(r) => {
-					atts.push(Attribute {
-						attname: String::from(r.get("attname").unwrap()),
-					})
-				},
-				postgres::SimpleQueryMessage::CommandComplete(n) => {
-					assert!(*n == rows.len() as u64 - 1);
-				},
-				_ => { assert!(false) },
-			};
-		}
+			atts.push(Attribute::from_row(row));
+		};
 
 		atts
 	}

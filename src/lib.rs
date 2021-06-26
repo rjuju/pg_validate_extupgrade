@@ -270,21 +270,27 @@ impl ToString for Conninfo {
 #[cfg(test)]
 mod test {
 	use std::collections::HashMap;
+	use postgres::Row;
 	use super::{*, compare::*, pgtype::*};
 
 	DbStruct! {
-		Attribute:attname {
+		Attribute:attname:Attribute {
 			attname: String,
 		}
 	}
 
 	DbStruct! {
-		Relation:relname {
-			attributes: Vec<Attribute> {PG_NO_CATALOG},
+		PgClass:relname:Relation {
 			relname: String,
 			relkind: Char,
 			relpersistence: Char,
 			new_feature: String {420000},
+		}
+	}
+	CompareStruct! {
+		Relation {
+			attributes: Vec<Attribute>,
+			class: PgClass,
 		}
 	}
 
@@ -306,7 +312,7 @@ mod test {
 				let mut relations = HashMap::new();
 
 				for r in v {
-					relations.insert(r.relname.clone(), r);
+					relations.insert(r.class.relname.clone(), r);
 				};
 
 				Extension {
@@ -323,22 +329,27 @@ mod test {
 			_ => Some(String::from("some value")),
 		};
 
+		let class = PgClass {
+			relname: String::from("t1"),
+			relkind: 'r' as i8,
+			relpersistence: 'p' as i8,
+			new_feature,
+		};
+
 		Relation {
+			ident: class.relname.clone(),
 			attributes: vec![
 				Attribute {
 					attname: String::from("id"),
 				}
 			],
-			relname: String::from("t1"),
-			relkind: 'r' as i8,
-			relpersistence: 'p' as i8,
-			new_feature,
+			class,
 		}
 	}
 
 	#[test]
 	fn test_tlist() {
-		let t1_tlist = Relation::tlist(140000);
+		let t1_tlist = PgClass::tlist(140000);
 
 		let mut tlist = vec![
 			String::from("relname"),
@@ -350,7 +361,7 @@ mod test {
 		assert_eq!(tlist, t1_tlist, "Target list for pg14 should not include \
 			\"new_feature\"");
 
-		let t1_tlist = Relation::tlist(420001);
+		let t1_tlist = PgClass::tlist(420001);
 
 		tlist.pop();
 		tlist.push(String::from("new_feature"));
@@ -384,7 +395,7 @@ mod test {
 		let mut t1_ins = get_t1(140000);
 		let t1_upg = get_t1(140000);
 
-		t1_ins.relkind = 'v' as i8;
+		t1_ins.class.relkind = 'v' as i8;
 		t1_ins.attributes[0].attname = String::from("ins_id");
 
 		t1_ins.compare(&t1_upg, &mut msg);
@@ -392,7 +403,8 @@ mod test {
 		assert!(
 			msg.contains("Relation t1 in relkind") &&
 			msg.contains("- v") &&
-			msg.contains("+ r")
+			msg.contains("+ r") &&
+			!msg.contains("PgClass")
 			,
 			"relkind change should be detected\n{}",
 			msg
@@ -401,7 +413,8 @@ mod test {
 		assert!(
 			msg.contains("Attribute ins_id in attname") &&
 			msg.contains("- ins_id") &&
-			msg.contains("+ id")
+			msg.contains("+ id") &&
+			!msg.contains("PgClass")
 			,
 			"attribute attname change should be detected\n{}",
 			msg
@@ -414,7 +427,7 @@ mod test {
 		let t1_ins = get_t1(430000);
 		let mut t1_upg = get_t1(430000);
 
-		t1_upg.relkind = 'v' as i8;
+		t1_upg.class.relkind = 'v' as i8;
 		t1_upg.attributes[0].attname = String::from("upg_id");
 
 		t1_ins.compare(&t1_upg, &mut msg);
@@ -422,7 +435,8 @@ mod test {
 		assert!(
 			msg.contains("Relation t1 in relkind") &&
 			msg.contains("- r") &&
-			msg.contains("+ v")
+			msg.contains("+ v") &&
+			!msg.contains("PgClass")
 			,
 			"relkind change should be detected\n{}",
 			msg
@@ -431,7 +445,8 @@ mod test {
 		assert!(
 			msg.contains("Attribute id in attname") &&
 			msg.contains("- id") &&
-			msg.contains("+ upg_id")
+			msg.contains("+ upg_id") &&
+			!msg.contains("PgClass")
 			,
 			"attribute attname change should be detected\n{}",
 			msg
@@ -479,7 +494,7 @@ mod test {
 		let mut t1_ins = get_t1(430000);
 		let t1_upg = get_t1(430000);
 
-		t1_ins.new_feature = Some(String::from("ins some value"));
+		t1_ins.class.new_feature = Some(String::from("ins some value"));
 		t1_ins.compare(&t1_upg, &mut msg);
 
 		assert!(
@@ -496,7 +511,7 @@ mod test {
 		let t1_ins = get_t1(430000);
 		let mut t1_upg = get_t1(430000);
 
-		t1_upg.new_feature = Some(String::from("upg some value"));
+		t1_upg.class.new_feature = Some(String::from("upg some value"));
 		t1_ins.compare(&t1_upg, &mut msg);
 
 		assert!(
@@ -548,7 +563,7 @@ mod test {
 		let t1_b = get_t1(140000);
 		let mut t2 = get_t1(140000);
 
-		t2.relname = String::from("t2");
+		t2.class.relname = String::from("t2");
 
 		let ext_ins = get_extension("ext_1_rel", Some(vec![t1_a]));
 		let ext_upg = get_extension("ext_2_rel", Some(vec![t1_b, t2]));

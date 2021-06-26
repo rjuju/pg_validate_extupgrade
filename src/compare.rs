@@ -3,8 +3,7 @@
  * Copyright: Copyright (c) 2021 : Julien Rouhaud - All rights reserved
  *---------------------------------------------------------------------------*/
 use std::collections::HashMap;
-
-pub const PG_NO_CATALOG: u32 = 9999999;
+use postgres::row::Row;
 
 pub trait Compare {
 	fn compare(&self, other: &Self, msg: &mut String);
@@ -28,6 +27,7 @@ pub fn diff<T>(a: T, b: T, msg: &mut String)
 
 pub trait Sql {
 	fn tlist(server_version_num: u32) -> Vec<String>;
+	fn from_row(row: &Row) -> Self;
 }
 
 impl<T: Compare> Compare for Vec<T>
@@ -188,13 +188,20 @@ macro_rules! CompareStruct {
 					let mut res = String::new();
 					self.$field.compare(&other.$field, &mut res);
 					if res != "" {
-						msg.push_str(&format!(
-								"Mismatch found for {} {} in {}:\n{}\n",
-								&stringify!($struct).to_string(),
-								&self.ident,
-								&stringify!($field).to_string(),
-								&res,
+						// If this is an inner structure holding some catalog
+						// data, display the original error to avoid an extra
+						// indirection message.
+						if stringify!($type).starts_with("Pg") {
+							msg.push_str(&res);
+						} else {
+							msg.push_str(&format!(
+									"Mismatch found for {} {} in {}:\n{}\n",
+									&stringify!($struct).to_string(),
+									&self.ident,
+									&stringify!($field).to_string(),
+									&res,
 							));
+						}
 					}
 				)*
 			}
@@ -210,10 +217,6 @@ macro_rules! CompareStruct {
 macro_rules! DbStruct {
 	// This part of the marco transforms the given T in Option<T> if it depends
 	// on a postgres major version.
-	(field PG_NO_CATALOG:$t:ty:$f:ident) => {
-		$t
-	};
-
 	(field $meh:tt:$t:ty:$f:ident) => {
 		Option<$t>
 	};
@@ -223,7 +226,7 @@ macro_rules! DbStruct {
 	};
 
 	// This part of the macro generate the final struct
-	($struct:ident:$ident:ident {
+	($struct:ident:$ident:ident:$typname:ident {
 		$( $field:ident:$type:ty $({$pgmin:tt})? ),*,
 	}) => {
 		#[derive(Debug)]
@@ -244,17 +247,17 @@ macro_rules! DbStruct {
 					if res != "" {
 						msg.push_str(&format!(
 								"Mismatch found for {} {} in {}:\n{}\n",
-								&stringify!($struct).to_string(),
+								&stringify!($typname).to_string(),
 								&self.$ident,
 								&stringify!($field).to_string(),
 								&res,
-							));
+						));
 					}
 				)*
 			}
 
 			fn typname() -> &'static str {
-				stringify!($struct)
+				stringify!($typname)
 			}
 		}
 
@@ -266,7 +269,7 @@ macro_rules! DbStruct {
 					$(let _pgmin = $pgmin;)?
 					if server_version_num >= _pgmin as u32 {
 						tlist.push(stringify!($field).to_string());
-					} else if _pgmin != PG_NO_CATALOG {
+					} else {
 						tlist.push(format!(
 								"NULL::\"{}\" AS {}",
 								stringify!($type).to_lowercase(),
@@ -276,6 +279,14 @@ macro_rules! DbStruct {
 					}
 				)*
 				tlist
+			}
+
+			fn from_row(row: &Row) -> Self {
+				$struct {
+					$(
+						$field: row.get(stringify!($field)),
+					)*
+				}
 			}
 		}
 	};
