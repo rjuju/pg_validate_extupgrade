@@ -5,7 +5,8 @@
 use std::collections::HashMap;
 use postgres::Transaction;
 
-use crate::{compare::*,
+use crate::{
+	compare::*,
 	DbStruct,
 	extension::pg_attribute::Attribute,
 };

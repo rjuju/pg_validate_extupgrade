@@ -16,16 +16,18 @@ pub trait Compare {
 	}
 }
 
-pub trait Sql {
-	fn tlist(server_version_num: u32) -> Vec<String>;
+// Can't have this function as default implementation as it's not possible to
+// define extra Trait requirement for generic underlying types like Vec<T>
+pub fn diff<T>(a: T, b: T, msg: &mut String)
+	where T: std::cmp::PartialEq + std::fmt::Display
+{
+	if a != b {
+		msg.push_str(&format!("\t- {}\n\t+ {}", a, b));
+	}
 }
 
-impl Compare for String {
-	fn compare(&self, other: &String, msg: &mut String) {
-		if self != other {
-			msg.push_str(&format!("\t- {}\n\t+ {}", self, other));
-		}
-	}
+pub trait Sql {
+	fn tlist(server_version_num: u32) -> Vec<String>;
 }
 
 impl<T: Compare> Compare for Vec<T>

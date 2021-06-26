@@ -22,6 +22,8 @@ use crate::extension::Extension;
 mod compare;
 use crate::compare::Compare;
 
+mod pgtype;
+
 pub struct App {
 	conninfo: Conninfo,
 	extname: String,
@@ -268,7 +270,7 @@ impl ToString for Conninfo {
 #[cfg(test)]
 mod test {
 	use std::collections::HashMap;
-	use super::{*, compare::*};
+	use super::{*, compare::*, pgtype::*};
 
 	DbStruct! {
 		Attribute:attname {
@@ -280,8 +282,8 @@ mod test {
 		Relation:relname {
 			attributes: Vec<Attribute> {PG_NO_CATALOG},
 			relname: String,
-			relkind: String,
-			relpersistence: String,
+			relkind: Char,
+			relpersistence: Char,
 			new_feature: String {420000},
 		}
 	}
@@ -328,8 +330,8 @@ mod test {
 				}
 			],
 			relname: String::from("t1"),
-			relkind: String::from("r"),
-			relpersistence: String::from("p"),
+			relkind: 'r' as i8,
+			relpersistence: 'p' as i8,
 			new_feature,
 		}
 	}
@@ -382,7 +384,7 @@ mod test {
 		let mut t1_ins = get_t1(140000);
 		let t1_upg = get_t1(140000);
 
-		t1_ins.relkind = String::from("v");
+		t1_ins.relkind = 'v' as i8;
 		t1_ins.attributes[0].attname = String::from("ins_id");
 
 		t1_ins.compare(&t1_upg, &mut msg);
@@ -412,7 +414,7 @@ mod test {
 		let t1_ins = get_t1(430000);
 		let mut t1_upg = get_t1(430000);
 
-		t1_upg.relkind = String::from("v");
+		t1_upg.relkind = 'v' as i8;
 		t1_upg.attributes[0].attname = String::from("upg_id");
 
 		t1_ins.compare(&t1_upg, &mut msg);
