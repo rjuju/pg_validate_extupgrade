@@ -115,14 +115,14 @@ impl App {
 		}
 	}
 
-	fn connect(&self) -> Result<Client, postgres::Error> {
+	fn connect(&self) -> Result<(Client, u32), postgres::Error> {
 		let mut client = Client::connect(&self.conninfo.to_string(), NoTls)?;
 
-		let rows = client.query("SHOW server_version", &[])?;
+		let rows = client.query("SHOW server_version_num", &[])?;
 		let ver: &str = rows[0].get(0);
 
 		println!("Connected, server version {}", ver);
-		Ok(client)
+		Ok((client, ver.parse().unwrap()))
 	}
 
 	fn error(msg: String) {
@@ -196,7 +196,7 @@ impl App {
 	}
 
 	pub fn run(&self) -> Result<(), String> {
-		let mut client = match self.connect() {
+		let (mut client, pgver) = match self.connect() {
 			Ok(c) => c,
 			Err(e) => { return Err(e.to_string()); },
 		};
@@ -207,10 +207,10 @@ impl App {
 			.expect("Could not start a transaction");
 
 		self.created(&mut transaction);
-		let from = Extension::snapshot(&self.extname, &mut transaction);
+		let from = Extension::snapshot(&self.extname, &mut transaction, pgver);
 
 		self.updated(&mut transaction);
-		let to = Extension::snapshot(&self.extname, &mut transaction);
+		let to = Extension::snapshot(&self.extname, &mut transaction, pgver);
 
 		let mut res = String::new();
 		from.compare(&to, &mut res);
@@ -262,5 +262,309 @@ impl ToString for Conninfo {
 			self.user,
 			self.dbname,
 		)
+	}
+}
+
+#[cfg(test)]
+mod test {
+	use std::collections::HashMap;
+	use super::{*, compare::*};
+
+	DbStruct! {
+		Attribute:attname {
+			attname: String,
+		}
+	}
+
+	DbStruct! {
+		Relation:relname {
+			attributes: Vec<Attribute> {PG_NO_CATALOG},
+			relname: String,
+			relkind: String,
+			relpersistence: String,
+			new_feature: String {420000},
+		}
+	}
+
+	CompareStruct! {
+		Extension {
+			relations: Option<HashMap<String, Relation>>,
+		}
+	}
+
+	fn get_extension(ident: &str, relations: Option<Vec<Relation>>)
+		-> Extension
+	{
+		match relations {
+			None => Extension {
+				ident: String::from(ident),
+				relations: None,
+			},
+			Some(v) => {
+				let mut relations = HashMap::new();
+
+				for r in v {
+					relations.insert(r.relname.clone(), r);
+				};
+
+				Extension {
+					ident: String::from(ident),
+					relations: Some(relations),
+				}
+			}
+		}
+	}
+
+	fn get_t1(pgver: u32) -> Relation {
+		let new_feature = match pgver {
+			0..=419999 => None,
+			_ => Some(String::from("some value")),
+		};
+
+		Relation {
+			attributes: vec![
+				Attribute {
+					attname: String::from("id"),
+				}
+			],
+			relname: String::from("t1"),
+			relkind: String::from("r"),
+			relpersistence: String::from("p"),
+			new_feature,
+		}
+	}
+
+	#[test]
+	fn test_tlist() {
+		let t1_tlist = Relation::tlist(140000);
+
+		let mut tlist = vec![
+			String::from("relname"),
+			String::from("relkind"),
+			String::from("relpersistence"),
+			String::from("NULL::\"string\" AS new_feature"),
+		];
+
+		assert_eq!(tlist, t1_tlist, "Target list for pg14 should not include \
+			\"new_feature\"");
+
+		let t1_tlist = Relation::tlist(420001);
+
+		tlist.pop();
+		tlist.push(String::from("new_feature"));
+
+		assert_eq!(tlist, t1_tlist, "Target list for pg42.1 should include \
+			\"new_feature\"");
+	}
+
+	#[test]
+	fn compare_same_relation() {
+		let mut msg = String::new();
+		let t1 = get_t1(140000);
+
+		t1.compare(&t1, &mut msg);
+
+		assert_eq!("", msg, "Identical relation (v14) should not raise \
+			anything\n{}", msg);
+
+		let mut msg = String::new();
+		let t1 = get_t1(430000);
+
+		t1.compare(&t1, &mut msg);
+
+		assert_eq!("", msg, "Identical relation (v43) should not raise \
+			anything\n{}", msg);
+	}
+
+	#[test]
+	fn compare_relation_ins_diff() {
+		let mut msg = String::new();
+		let mut t1_ins = get_t1(140000);
+		let t1_upg = get_t1(140000);
+
+		t1_ins.relkind = String::from("v");
+		t1_ins.attributes[0].attname = String::from("ins_id");
+
+		t1_ins.compare(&t1_upg, &mut msg);
+
+		assert!(
+			msg.contains("Relation t1 in relkind") &&
+			msg.contains("- v") &&
+			msg.contains("+ r")
+			,
+			"relkind change should be detected\n{}",
+			msg
+		);
+
+		assert!(
+			msg.contains("Attribute ins_id in attname") &&
+			msg.contains("- ins_id") &&
+			msg.contains("+ id")
+			,
+			"attribute attname change should be detected\n{}",
+			msg
+		);
+	}
+
+	#[test]
+	fn compare_relation_upg_diff() {
+		let mut msg = String::new();
+		let t1_ins = get_t1(430000);
+		let mut t1_upg = get_t1(430000);
+
+		t1_upg.relkind = String::from("v");
+		t1_upg.attributes[0].attname = String::from("upg_id");
+
+		t1_ins.compare(&t1_upg, &mut msg);
+
+		assert!(
+			msg.contains("Relation t1 in relkind") &&
+			msg.contains("- r") &&
+			msg.contains("+ v")
+			,
+			"relkind change should be detected\n{}",
+			msg
+		);
+
+		assert!(
+			msg.contains("Attribute id in attname") &&
+			msg.contains("- id") &&
+			msg.contains("+ upg_id")
+			,
+			"attribute attname change should be detected\n{}",
+			msg
+		);
+	}
+
+	#[test]
+	fn compare_relation_pgver_diff() {
+		let mut msg = String::new();
+		let t1_ins = get_t1(140000);
+		let t1_upg = get_t1(430000);
+
+		t1_ins.compare(&t1_upg, &mut msg);
+
+		assert!(
+			msg.contains("Relation t1 in new_feature") &&
+			msg.contains("installed has no value") &&
+			msg.contains("upgraded has")
+			,
+			"Mismatch in optional field (missing in ins) should be \
+				detected\n{}",
+			msg
+		);
+
+		let mut msg = String::new();
+		let t1_ins = get_t1(430000);
+		let t1_upg = get_t1(140000);
+
+		t1_ins.compare(&t1_upg, &mut msg);
+
+		assert!(
+			msg.contains("Relation t1 in new_feature") &&
+			msg.contains("upgraded has no value") &&
+			msg.contains("installed has")
+			,
+			"Mismatch in optional field (missing in upg) should be \
+				detected\n{}",
+			msg
+		);
+	}
+
+	#[test]
+	fn compare_relation_opt_diff() {
+		let mut msg = String::new();
+		let mut t1_ins = get_t1(430000);
+		let t1_upg = get_t1(430000);
+
+		t1_ins.new_feature = Some(String::from("ins some value"));
+		t1_ins.compare(&t1_upg, &mut msg);
+
+		assert!(
+			msg.contains("Relation t1 in new_feature") &&
+			msg.contains("- ins some value") &&
+			msg.contains("+ some value")
+			,
+			"Mismatch in optional field (changed in ins) should be \
+				detected\n{}",
+			msg
+		);
+
+		let mut msg = String::new();
+		let t1_ins = get_t1(430000);
+		let mut t1_upg = get_t1(430000);
+
+		t1_upg.new_feature = Some(String::from("upg some value"));
+		t1_ins.compare(&t1_upg, &mut msg);
+
+		assert!(
+			msg.contains("Relation t1 in new_feature") &&
+			msg.contains("- some value") &&
+			msg.contains("+ upg some value")
+			,
+			"Mismatch in optional field (changed in upg) should be \
+				detected\n{}",
+			msg
+		);
+	}
+
+	#[test]
+	fn compare_same_ext() {
+		let mut msg = String::new();
+		let ext_ins = get_extension("empty_ext", None);
+
+		ext_ins.compare(&ext_ins, &mut msg);
+
+		assert_eq!("", msg,
+			"Two empty extensions should be identical\n{}",
+			msg);
+
+		let mut msg = String::new();
+		let ext_ins = get_extension("empty_ext", Some(vec![]));
+
+		ext_ins.compare(&ext_ins, &mut msg);
+
+		assert_eq!("", msg,
+			"Two extensions with empty rel list should be identical\n{}",
+			msg);
+
+		let mut msg = String::new();
+		let t1 = get_t1(140000);
+		let ext_ins = get_extension("ext_1_rel", Some(vec![t1]));
+
+		ext_ins.compare(&ext_ins, &mut msg);
+
+		assert_eq!("", msg,
+			"Two extensions with same 1 rel should be identical\n{}",
+			msg);
+	}
+
+	#[test]
+	fn compare_ext_diff_nb_rels() {
+		let mut msg = String::new();
+		let t1_a = get_t1(140000);
+		let t1_b = get_t1(140000);
+		let mut t2 = get_t1(140000);
+
+		t2.relname = String::from("t2");
+
+		let ext_ins = get_extension("ext_1_rel", Some(vec![t1_a]));
+		let ext_upg = get_extension("ext_2_rel", Some(vec![t1_b, t2]));
+
+		ext_ins.compare(&ext_upg, &mut msg);
+
+		assert!(msg.contains("Upgraded version has 1 more Relation") &&
+			msg.contains("- t2"),
+			"Should detect that upgraded extension has 1 more rel\n{}",
+			msg);
+
+		let mut msg = String::new();
+
+		ext_upg.compare(&ext_ins, &mut msg);
+
+		assert!(msg.contains("Installed version has 1 more Relation") &&
+			msg.contains("- t2"),
+			"Should detect that installed extension has 1 more rel\n{}",
+			msg);
 	}
 }

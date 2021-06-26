@@ -9,18 +9,20 @@ use postgres::Transaction;
 mod pg_class;
 use pg_class::Relation;
 
-use crate::{compare::Compare, DbStruct};
+use crate::{compare::Compare, CompareStruct};
 
 mod pg_attribute;
 
-DbStruct! {
+CompareStruct! {
 	Extension {
 		relations: Option<HashMap<String, Relation>>,
 	}
 }
 
 impl Extension {
-	pub fn snapshot(extname: &str, client: &mut Transaction) -> Self {
+	pub fn snapshot(extname: &str, client: &mut Transaction, pgver: u32)
+		-> Self
+	{
 		let mut ext = Extension {
 			ident: String::from(extname),
 			relations: None,
@@ -44,7 +46,8 @@ impl Extension {
 
 			match classid {
 				"pg_class" => {
-					ext.relations = Some(Relation::snapshot(client, objids));
+					ext.relations = Some(Relation::snapshot(client,
+							objids, pgver));
 				}
 				_ => {
 					println!("Classid \"{}\" not handled", classid);

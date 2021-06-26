@@ -4,24 +4,30 @@
  *---------------------------------------------------------------------------*/
 use postgres::Transaction;
 
-use crate::{compare::Compare, DbStruct};
+use crate::{
+	compare::*,
+	DbStruct,
+};
 
 DbStruct! {
-	Attribute{
+	Attribute:attname {
 		attname: String,
 	}
 }
 
 impl Attribute {
-	pub fn snapshot(client: &mut Transaction, relid: u32) -> Vec<Attribute> {
+	pub fn snapshot(client: &mut Transaction, relid: u32, pgver: u32)
+		-> Vec<Attribute>
+	{
 		let mut atts = Vec::new();
 
-		let sql = format!("SELECT * \
+		let sql = format!("SELECT {} \
 			FROM pg_attribute a \
 			WHERE attnum > 0 \
 			AND NOT attisdropped \
 			AND attrelid = {} \
 			ORDER BY attnum",
+			Attribute::tlist(pgver).join(", "),
 			relid,
 		);
 
@@ -32,7 +38,6 @@ impl Attribute {
 			match row {
 				postgres::SimpleQueryMessage::Row(r) => {
 					atts.push(Attribute {
-						ident: String::from(r.get("attname").unwrap()),
 						attname: String::from(r.get("attname").unwrap()),
 					})
 				},

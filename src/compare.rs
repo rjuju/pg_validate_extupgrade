@@ -4,11 +4,20 @@
  *---------------------------------------------------------------------------*/
 use std::collections::HashMap;
 
+pub const PG_NO_CATALOG: u32 = 9999999;
+
 pub trait Compare {
 	fn compare(&self, other: &Self, msg: &mut String);
 	fn typname() -> &'static str {
 		panic!("Should not be called.");
 	}
+	fn value(&self) -> String {
+		format!("one")
+	}
+}
+
+pub trait Sql {
+	fn tlist(server_version_num: u32) -> Vec<String>;
 }
 
 impl Compare for String {
@@ -19,7 +28,9 @@ impl Compare for String {
 	}
 }
 
-impl<T: Compare> Compare for Vec<T> {
+impl<T: Compare> Compare for Vec<T>
+where T: std::fmt::Debug
+{
 	fn compare(&self, other: &Vec<T>, msg: &mut String) {
 
 		for (i,(a,b)) in self.iter().zip(other.iter()).enumerate() {
@@ -34,22 +45,24 @@ impl<T: Compare> Compare for Vec<T> {
 	fn typname() -> &'static str {
 		<T>::typname()
 	}
+
+	fn value(&self) -> String {
+		format!("\n\t- {:?}\n", self)
+	}
 }
 
 impl<T: Compare> Compare for Option<T> {
 	fn compare(&self, other: &Option<T>, msg: &mut String) {
 		if self.is_none() && !other.is_none() {
-			let res = format!("installed has no {}, while upgraded has",
-				<T>::typname(),
-				);
+			let res = format!("installed has no value, while upgraded \
+				has {}", other.value());
 			msg.push_str(&res);
 			return;
 		}
 
 		if !self.is_none() && other.is_none() {
-			let res = format!("Upgraded has no {}, while installed has",
-				<T>::typname(),
-				);
+			let res = format!("upgraded has no value, while installed \
+				has {}", self.as_ref().unwrap().value());
 			msg.push_str(&res);
 			return;
 		}
@@ -72,9 +85,11 @@ impl<T: Compare> Compare for Option<T> {
 impl<T: Compare> Compare for HashMap<String, T> {
 	fn compare(&self, other: &HashMap<String, T>, msg: &mut String) {
 		if self.len() < other.len() {
-			let mut res = format!("Upgraded has {} more {t} than installed\n\
-				Missing {t}:\n",
+			let mut res = format!("Upgraded version has {} more {t} ({}) than \
+				installed version ({})\nMissing {t}:\n",
 				other.len() - self.len(),
+				other.len(),
+				self.len(),
 				t = <T>::typname(),
 			);
 
@@ -89,9 +104,11 @@ impl<T: Compare> Compare for HashMap<String, T> {
 		}
 
 		if self.len() > other.len() {
-			let mut res = format!("Installed version has {} more {t} than \
-				upgraded\nMissing {t}:\n",
+			let mut res = format!("Installed version has {} more {t} ({}) than \
+				upgraded version ({})\nMissing {t}:\n",
 				self.len() - other.len(),
+				self.len(),
+				other.len(),
 				t = <T>::typname(),
 			);
 
@@ -155,7 +172,7 @@ impl<T: Compare> Compare for HashMap<String, T> {
 }
 
 #[macro_export]
-macro_rules! DbStruct {
+macro_rules! CompareStruct {
 	($struct:ident {$( $field:ident:$type:ty ),*,}) => {
 		#[derive(Debug)]
 		pub struct $struct {
@@ -182,6 +199,81 @@ macro_rules! DbStruct {
 
 			fn typname() -> &'static str {
 				stringify!($struct)
+			}
+		}
+	};
+}
+
+#[macro_export]
+macro_rules! DbStruct {
+	// This part of the marco transforms the given T in Option<T> if it depends
+	// on a postgres major version.
+	(field PG_NO_CATALOG:$t:ty:$f:ident) => {
+		$t
+	};
+
+	(field $meh:tt:$t:ty:$f:ident) => {
+		Option<$t>
+	};
+
+	(field $t:ty:$f:ident) => {
+		$t
+	};
+
+	// This part of the macro generate the final struct
+	($struct:ident:$ident:ident {
+		$( $field:ident:$type:ty $({$pgmin:tt})? ),*,
+	}) => {
+		#[derive(Debug)]
+		pub struct $struct {
+			$(
+				$field:
+				DbStruct!(
+					field $($pgmin :)? $type:$field
+				)
+			),*
+		}
+
+		impl Compare for $struct {
+			fn compare(&self, other: &Self, msg: &mut String) {
+				$(
+					let mut res = String::new();
+					self.$field.compare(&other.$field, &mut res);
+					if res != "" {
+						msg.push_str(&format!(
+								"Mismatch found for {} {} in {}:\n{}\n",
+								&stringify!($struct).to_string(),
+								&self.$ident,
+								&stringify!($field).to_string(),
+								&res,
+							));
+					}
+				)*
+			}
+
+			fn typname() -> &'static str {
+				stringify!($struct)
+			}
+		}
+
+		impl Sql for $struct {
+			fn tlist(server_version_num: u32) -> Vec<String> {
+				let mut tlist = vec![];
+				$(
+					let _pgmin = 0;
+					$(let _pgmin = $pgmin;)?
+					if server_version_num >= _pgmin as u32 {
+						tlist.push(stringify!($field).to_string());
+					} else if _pgmin != PG_NO_CATALOG {
+						tlist.push(format!(
+								"NULL::\"{}\" AS {}",
+								stringify!($type).to_lowercase(),
+								stringify!($field),
+							)
+						);
+					}
+				)*
+				tlist
 			}
 		}
 	};

@@ -5,26 +5,30 @@
 use std::collections::HashMap;
 use postgres::Transaction;
 
-use crate::{compare::Compare, extension::pg_attribute::Attribute, DbStruct};
+use crate::{compare::*,
+	DbStruct,
+	extension::pg_attribute::Attribute,
+};
 
 DbStruct! {
-	Relation {
-		attributes: Vec<Attribute>,
+	Relation:relname {
+		attributes: Vec<Attribute> {PG_NO_CATALOG},
+		relname: String,
 		relkind: String,
 		relpersistence: String,
 	}
 }
 
 impl Relation {
-	pub fn snapshot<'a>(client: &mut Transaction, oids: Vec<u32>)
+	pub fn snapshot<'a>(client: &mut Transaction, oids: Vec<u32>, pgver: u32)
 		-> HashMap<String, Relation>
 	{
 		let mut rels = HashMap::new();
 
 		for oid in oids {
-			match snap_one_class(client, oid) {
+			match snap_one_class(client, oid, pgver) {
 				Some(r) => {
-					rels.insert(r.ident.clone(), r);
+					rels.insert(r.relname.clone(), r);
 				},
 				None => {}
 			}
@@ -34,12 +38,14 @@ impl Relation {
 	}
 }
 
-fn snap_one_class(client: &mut Transaction, oid: u32)
+fn snap_one_class(client: &mut Transaction, oid: u32, pgver: u32)
 	-> Option<Relation>
 {
-	let sql = format!("SELECT * \
+	let sql = format!("SELECT {} \
 		FROM pg_class c \
-		WHERE oid = {}", oid);
+		WHERE oid = {}",
+		Relation::tlist(pgver).join(", "),
+		oid);
 
 	let rows = client.simple_query(&sql)
 		.expect("Could not get pg_class row");
@@ -61,11 +67,11 @@ fn snap_one_class(client: &mut Transaction, oid: u32)
 	let relkind = String::from(rel.get("relkind").unwrap());
 	let relpersistence = String::from(rel.get("relpersistence").unwrap());
 
-	let atts = Attribute::snapshot(client, oid);
+	let atts = Attribute::snapshot(client, oid, pgver);
 
 	Some(
 		Relation {
-			ident: relname,
+			relname,
 			attributes: atts,
 			relkind,
 			relpersistence,
