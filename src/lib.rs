@@ -24,6 +24,23 @@ use crate::compare::Compare;
 
 mod pgtype;
 
+pub mod elog {
+	pub const WARNING: u8 = 19;
+	pub const ERROR: u8 = 21;
+
+	fn lvl(level: u8) -> &'static str{
+		match level {
+			WARNING => "WARNING",
+			ERROR => "ERROR",
+			_ => { panic!("Unexpected level {}", level); }
+		}
+	}
+	
+	pub fn elog(level: u8, msg: &str) {
+		eprintln!("{}: {}", lvl(level), msg);
+	}
+}
+
 pub struct App {
 	conninfo: Conninfo,
 	extname: String,

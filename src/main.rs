@@ -3,11 +3,11 @@
  * Copyright: Copyright (c) 2021 : Julien Rouhaud - All rights reserved
  *---------------------------------------------------------------------------*/
 use std::process;
-use pg_validate_extupgrade::App;
+use pg_validate_extupgrade::{App, elog::*};
 
 fn main() {
     App::new().run().unwrap_or_else(|e| {
-		println!("ERROR:\n{}", e);
+		elog(ERROR, &format!("Differences found:\n{}", e));
 		process::exit(1);
 	});
 
