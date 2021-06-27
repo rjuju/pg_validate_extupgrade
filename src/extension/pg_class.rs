@@ -9,6 +9,7 @@ use crate::{compare::*,
 	CompareStruct, DbStruct,
 	elog::*,
 	extension::pg_attribute::Attribute,
+	extension::pg_index::Index,
 	pgtype::*,
 };
 
@@ -39,6 +40,7 @@ DbStruct! {
 CompareStruct! {
 	Relation {
 		attributes: Vec<Attribute>,
+		indexes: Option<Vec<Index>>,
 		class: PgClass,
 	}
 }
@@ -78,12 +80,11 @@ fn snap_one_class(client: &mut Transaction, oid: u32, pgver: u32)
 
 	let class = PgClass::from_row(&row);
 
+	// Index should not be seen as direct dependency of an extension and will
+	// be handled explicitly
+	assert!(!class.relkind != 'i' as Char);
+
 	// FIXME: Warn about properties not handled yet
-	if class.relhasindex {
-		elog(WARNING,
-			&format!("{} - relhasindex is not supported",
-			&class.relname));
-	}
 	if class.relchecks > 0 {
 		elog(WARNING,
 			&format!("{} - relchecks is not supported",
@@ -101,11 +102,16 @@ fn snap_one_class(client: &mut Transaction, oid: u32, pgver: u32)
 	}
 
 	let atts = Attribute::snapshot(client, oid, pgver);
+	let indexes = match class.relhasindex {
+		false => None,
+		true => Some(Index::snapshot(client, oid, pgver)),
+	};
 
 	Some(
 		Relation {
 			ident: class.relname.clone(),
 			attributes: atts,
+			indexes,
 			class,
 		}
 	)

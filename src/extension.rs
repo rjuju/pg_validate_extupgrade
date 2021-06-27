@@ -12,6 +12,7 @@ use pg_class::Relation;
 use crate::{compare::Compare, CompareStruct};
 
 mod pg_attribute;
+mod pg_index;
 
 CompareStruct! {
 	Extension {
