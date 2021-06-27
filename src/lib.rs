@@ -284,7 +284,7 @@ mod test {
 			relname: Name,
 			relkind: Char,
 			relpersistence: Char,
-			new_feature: String {420000},
+			new_feature: String = ("deparse(new_feature)") {420000},
 		}
 	}
 	CompareStruct! {
@@ -364,7 +364,7 @@ mod test {
 		let t1_tlist = PgClass::tlist(420001);
 
 		tlist.pop();
-		tlist.push(String::from("new_feature"));
+		tlist.push(String::from("deparse(new_feature) AS new_feature"));
 
 		assert_eq!(tlist, t1_tlist, "Target list for pg42.1 should include \
 			\"new_feature\"");

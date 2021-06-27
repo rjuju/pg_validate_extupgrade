@@ -217,7 +217,7 @@ macro_rules! DbStruct {
 
 	// This part of the macro generate the final struct
 	($struct:ident:$ident:ident:$typname:ident {
-		$( $field:ident:$type:ty $({$pgmin:tt})? ),*,
+		$( $field:ident:$type:ty $(=($expr:literal))? $({$pgmin:tt})? ),*,
 	}) => {
 		#[derive(Debug)]
 		pub struct $struct {
@@ -258,7 +258,18 @@ macro_rules! DbStruct {
 					let _pgmin = 0;
 					$(let _pgmin = $pgmin;)?
 					if server_version_num >= _pgmin as u32 {
-						tlist.push(stringify!($field).to_string());
+						//tlist.push(stringify!($field).to_string());
+						let _expr = stringify!($field);
+						let _as = String::from("");
+						$(
+							let _expr = $expr;
+							let _as = format!(" AS {}", stringify!($field));
+						)?
+
+						tlist.push(format!("{}{}",
+								_expr.to_string(),
+								_as,
+						));
 					} else {
 						tlist.push(format!(
 								"NULL::\"{}\" AS {}",
