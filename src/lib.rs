@@ -275,13 +275,13 @@ mod test {
 
 	DbStruct! {
 		Attribute:attname:Attribute {
-			attname: String,
+			attname: Name,
 		}
 	}
 
 	DbStruct! {
 		PgClass:relname:Relation {
-			relname: String,
+			relname: Name,
 			relkind: Char,
 			relpersistence: Char,
 			new_feature: String {420000},

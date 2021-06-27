@@ -13,7 +13,7 @@ use crate::{compare::*,
 
 DbStruct! {
 	PgClass:relname:Relation {
-		relname: String,
+		relname: Name,
 		relkind: Char,
 		relpersistence: Char,
 	}
