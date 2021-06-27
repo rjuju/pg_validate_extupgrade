@@ -65,3 +65,7 @@ PgAlias!{
 	Name = String,
 	Smallint = i16,
 }
+
+// Additional aliases for rust types having multiple corresponding postgres
+// types
+pub type Text = String;

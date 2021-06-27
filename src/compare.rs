@@ -5,6 +5,12 @@
 use std::collections::HashMap;
 use postgres::row::Row;
 
+pub const PG_9_3: u32 = 90300;
+pub const PG_9_4: u32 = 90400;
+pub const PG_10: u32 = 100000;
+pub const PG_12: u32 = 120000;
+pub const PG_14: u32 = 140000;
+
 pub trait Compare {
 	fn compare(&self, other: &Self, msg: &mut String);
 	fn typname() -> &'static str {

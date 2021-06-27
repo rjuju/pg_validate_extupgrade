@@ -7,15 +7,32 @@ use postgres::{Row, Transaction};
 
 use crate::{compare::*,
 	CompareStruct, DbStruct,
+	elog::*,
 	extension::pg_attribute::Attribute,
 	pgtype::*,
 };
 
 DbStruct! {
 	PgClass:relname:Relation {
-		relname: Name,
-		relkind: Char,
+		relname: Text = ("c.oid::regclass::text"),
+		reloftype: Text = ("reloftype::regtype::text"),
+		relowner: Name = ("r.rolname"),
+		relam: Option<Name> = ("am.amname"),
+		relhasindex: Bool,
 		relpersistence: Char,
+		relkind: Char,
+		relchecks: Smallint,
+		relhasrules: Bool,
+		relhastriggers: Bool,
+		relrowsecurity: Bool {PG_9_4},
+		relforcerowsecurity: Bool {PG_9_4},
+		relispopulated: Bool {PG_9_3},
+		relreplident: Char {PG_9_4},
+		relispartition: Bool {PG_10},
+		relpartkey: Text = ("pg_get_partkeydef(c.oid)") {PG_10},
+		relacl: Option<Text> = ("relacl::text"),
+		reloptions: Option<Vec<Text>>,
+		relpartbound: Text = ("pg_get_expr(c.relpartbound, c.oid)") {PG_10},
 	}
 }
 
@@ -50,7 +67,9 @@ fn snap_one_class(client: &mut Transaction, oid: u32, pgver: u32)
 {
 	let sql = format!("SELECT {} \
 		FROM pg_class c \
-		WHERE oid = $1",
+		JOIN pg_roles r ON r.oid = c.relowner \
+		LEFT JOIN pg_am am ON am.oid = c.relam \
+		WHERE c.oid = $1",
 		PgClass::tlist(pgver).join(", "),
 	);
 
@@ -58,6 +77,28 @@ fn snap_one_class(client: &mut Transaction, oid: u32, pgver: u32)
 		.expect("Could not get pg_class row");
 
 	let class = PgClass::from_row(&row);
+
+	// FIXME: Warn about properties not handled yet
+	if class.relhasindex {
+		elog(WARNING,
+			&format!("{} - relhasindex is not supported",
+			&class.relname));
+	}
+	if class.relchecks > 0 {
+		elog(WARNING,
+			&format!("{} - relchecks is not supported",
+			&class.relname));
+	}
+	if class.relhasrules {
+		elog(WARNING,
+			&format!("{} - relhasrules is not supported",
+			&class.relname));
+	}
+	if class.relhastriggers {
+		elog(WARNING,
+			&format!("{} - relhastriggers is not supported",
+			&class.relname));
+	}
 
 	let atts = Attribute::snapshot(client, oid, pgver);
 
