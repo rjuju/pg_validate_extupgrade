@@ -25,15 +25,15 @@ DbStruct! {
 		relchecks: Smallint,
 		relhasrules: Bool,
 		relhastriggers: Bool,
-		relrowsecurity: Bool {PG_9_4},
-		relforcerowsecurity: Bool {PG_9_4},
-		relispopulated: Bool {PG_9_3},
-		relreplident: Char {PG_9_4},
-		relispartition: Bool {PG_10},
-		relpartkey: Text = ("pg_get_partkeydef(c.oid)") {PG_10},
+		relrowsecurity: Bool {PG_9_4..},
+		relforcerowsecurity: Bool {PG_9_4..},
+		relispopulated: Bool {PG_9_3..},
+		relreplident: Char {PG_9_4..},
+		relispartition: Bool {PG_10..},
+		relpartkey: Text = ("pg_get_partkeydef(c.oid)") {PG_10..},
 		relacl: Option<Text> = ("relacl::text"),
 		reloptions: Option<Vec<Text>>,
-		relpartbound: Text = ("pg_get_expr(c.relpartbound, c.oid)") {PG_10},
+		relpartbound: Text = ("pg_get_expr(c.relpartbound, c.oid)") {PG_10..},
 	}
 }
 

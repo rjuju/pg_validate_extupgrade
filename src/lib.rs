@@ -301,7 +301,9 @@ mod test {
 			relname: Name,
 			relkind: Char,
 			relpersistence: Char,
-			new_feature: String = ("deparse(new_feature)") {420000},
+			new_feature: Text = ("deparse(new_feature)") {PG_12..},
+			deprecated_feature: bool {..PG_10},
+			transient_feature: bool {PG_9_4..PG_10},
 		}
 	}
 	CompareStruct! {
@@ -342,8 +344,16 @@ mod test {
 
 	fn get_t1(pgver: u32) -> Relation {
 		let new_feature = match pgver {
-			0..=419999 => None,
-			_ => Some(String::from("some value")),
+			PG_12..=PG_MAX => Some(String::from("some value")),
+			_ => None,
+		};
+		let deprecated_feature = match pgver {
+			PG_10..=PG_MAX => None,
+			_ => Some(true),
+		};
+		let transient_feature = match pgver {
+			PG_9_4..=90699 => Some(true),
+			_ => None,
 		};
 
 		let class = PgClass {
@@ -351,6 +361,8 @@ mod test {
 			relkind: 'r' as i8,
 			relpersistence: 'p' as i8,
 			new_feature,
+			deprecated_feature,
+			transient_feature,
 		};
 
 		Relation {
@@ -366,25 +378,44 @@ mod test {
 
 	#[test]
 	fn test_tlist() {
-		let t1_tlist = PgClass::tlist(140000);
+		let t1_tlist = PgClass::tlist(PG_10);
 
-		let mut tlist = vec![
+		let mut exp_tlist = vec![
 			String::from("relname"),
 			String::from("relkind"),
 			String::from("relpersistence"),
-			String::from("NULL::\"string\" AS new_feature"),
+			String::from("NULL::\"text\" AS new_feature"),
+			String::from("NULL::\"bool\" AS deprecated_feature"),
+			String::from("NULL::\"bool\" AS transient_feature"),
 		];
 
-		assert_eq!(tlist, t1_tlist, "Target list for pg14 should not include \
-			\"new_feature\"");
+		assert_eq!(exp_tlist, t1_tlist, "Target list for pg10 should not include \
+			any of the optional feature");
 
-		let t1_tlist = PgClass::tlist(420001);
+		let t1_tlist = PgClass::tlist(PG_14);
 
-		tlist.pop();
-		tlist.push(String::from("deparse(new_feature) AS new_feature"));
+		exp_tlist[3] =String::from("deparse(new_feature) AS new_feature");
+		exp_tlist[4] =String::from("NULL::\"bool\" AS deprecated_feature");
+		exp_tlist[5] =String::from("NULL::\"bool\" AS transient_feature");
 
-		assert_eq!(tlist, t1_tlist, "Target list for pg42.1 should include \
-			\"new_feature\"");
+		assert_eq!(exp_tlist, t1_tlist, "Target list for pg14 should include \
+			only \"new_feature\"");
+
+		let t1_tlist = PgClass::tlist(PG_9_4);
+		exp_tlist[3] =String::from("NULL::\"text\" AS new_feature");
+		exp_tlist[4] =String::from("deprecated_feature");
+		exp_tlist[5] =String::from("transient_feature");
+
+		assert_eq!(exp_tlist, t1_tlist, "Target list for pg9.4 should include \
+			\"deprecated_feature\" and \"transient_feature\"\n");
+
+		let t1_tlist = PgClass::tlist(PG_9_3);
+		exp_tlist[3] =String::from("NULL::\"text\" AS new_feature");
+		exp_tlist[4] =String::from("deprecated_feature");
+		exp_tlist[5] =String::from("NULL::\"bool\" AS transient_feature");
+
+		assert_eq!(exp_tlist, t1_tlist, "Target list for pg9.3 should include \
+			only \"deprecated_feature\"");
 	}
 
 	#[test]
@@ -473,12 +504,13 @@ mod test {
 	#[test]
 	fn compare_relation_pgver_diff() {
 		let mut msg = String::new();
-		let t1_ins = get_t1(140000);
-		let t1_upg = get_t1(430000);
+		let t1_ins = get_t1(PG_10);
+		let t1_upg = get_t1(PG_14);
 
 		t1_ins.compare(&t1_upg, &mut msg);
 
-		assert!(
+		assert_ne!("", msg, "Should find mismatch comparing ins to upg");
+		assert_eq!(true,
 			msg.contains("Relation t1 in new_feature") &&
 			msg.contains("installed has no value") &&
 			msg.contains("upgraded has")
@@ -489,12 +521,13 @@ mod test {
 		);
 
 		let mut msg = String::new();
-		let t1_ins = get_t1(430000);
-		let t1_upg = get_t1(140000);
+		let t1_ins = get_t1(PG_14);
+		let t1_upg = get_t1(PG_10);
 
 		t1_ins.compare(&t1_upg, &mut msg);
 
-		assert!(
+		assert_ne!("", msg, "Should find mismatch comparing upg to ins");
+		assert_eq!(true,
 			msg.contains("Relation t1 in new_feature") &&
 			msg.contains("upgraded has no value") &&
 			msg.contains("installed has")

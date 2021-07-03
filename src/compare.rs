@@ -11,6 +11,9 @@ pub const PG_10: u32 = 100000;
 pub const PG_12: u32 = 120000;
 pub const PG_14: u32 = 140000;
 
+pub const PG_MIN: u32 = 0;
+pub const PG_MAX: u32 = u32::MAX;
+
 pub trait Compare {
 	fn compare(&self, other: &Self, msg: &mut String);
 	fn typname() -> &'static str {
@@ -213,7 +216,11 @@ macro_rules! CompareStruct {
 macro_rules! DbStruct {
 	// This part of the marco transforms the given T in Option<T> if it depends
 	// on a postgres major version.
-	(field $meh:tt:$t:ty:$f:ident) => {
+	(field $min:tt:$max:tt:$t:ty:$f:ident) => {
+		Option<$t>
+	};
+
+	(field $minormax:tt:$t:ty:$f:ident) => {
 		Option<$t>
 	};
 
@@ -223,14 +230,19 @@ macro_rules! DbStruct {
 
 	// This part of the macro generate the final struct
 	($struct:ident:$ident:ident:$typname:ident {
-		$( $field:ident:$type:ty $(=($expr:literal))? $({$pgmin:tt})? ),*,
+		$(
+			$field:ident:$type:ty $(=($expr:literal))?
+			$( { $($pgmin:ident)? .. $($pgmax:ident)? } )?
+		),*,
 	}) => {
 		#[derive(Debug)]
 		pub struct $struct {
 			$(
 				$field:
 				DbStruct!(
-					field $($pgmin :)? $type:$field
+					// optional minimum pg major version (inclusive) and
+					// maximum pg major version (exclusive)
+					field $($($pgmin :)?)?  $($($pgmax :)?)? $type:$field
 				)
 			),*
 		}
@@ -261,10 +273,14 @@ macro_rules! DbStruct {
 			fn tlist(server_version_num: u32) -> Vec<String> {
 				let mut tlist = vec![];
 				$(
-					let _pgmin = 0;
-					$(let _pgmin = $pgmin;)?
-					if server_version_num >= _pgmin as u32 {
-						//tlist.push(stringify!($field).to_string());
+					let _pgmin = PG_MIN;
+					$($(let _pgmin = $pgmin;)?)?
+					let _pgmax = PG_MAX;
+					$($(let _pgmax = $pgmax;)?)?
+
+					if server_version_num >= _pgmin as u32 &&
+						server_version_num < _pgmax
+					{
 						let _expr = stringify!($field);
 						let _as = String::from("");
 						$(
