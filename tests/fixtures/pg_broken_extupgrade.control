@@ -1,0 +1,6 @@
+comment = 'Dump extension with broken upgrade path'
+default_version = 'head-1.1'
+module_pathname = '$libdir/pg_broken_extupgrade'
+superuser = false
+relocatable = false
+schema = 'public'
