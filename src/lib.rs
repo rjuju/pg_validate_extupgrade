@@ -303,7 +303,7 @@ mod test {
 			relpersistence: Char,
 			new_feature: Text = ("deparse(new_feature)") {PG_12..},
 			deprecated_feature: bool {..PG_10},
-			transient_feature: bool {PG_9_4..PG_10},
+			transient_feature: Char {PG_9_4..PG_10},
 		}
 	}
 	CompareStruct! {
@@ -352,7 +352,7 @@ mod test {
 			_ => Some(true),
 		};
 		let transient_feature = match pgver {
-			PG_9_4..=90699 => Some(true),
+			PG_9_4..=90699 => Some('a' as i8),
 			_ => None,
 		};
 
@@ -384,9 +384,9 @@ mod test {
 			String::from("relname"),
 			String::from("relkind"),
 			String::from("relpersistence"),
-			String::from("NULL::\"text\" AS new_feature"),
-			String::from("NULL::\"bool\" AS deprecated_feature"),
-			String::from("NULL::\"bool\" AS transient_feature"),
+			String::from("NULL::text AS new_feature"),
+			String::from("NULL::bool AS deprecated_feature"),
+			String::from("NULL::\"char\" AS transient_feature"),
 		];
 
 		assert_eq!(exp_tlist, t1_tlist, "Target list for pg10 should not include \
@@ -395,14 +395,14 @@ mod test {
 		let t1_tlist = PgClass::tlist(PG_14);
 
 		exp_tlist[3] =String::from("deparse(new_feature) AS new_feature");
-		exp_tlist[4] =String::from("NULL::\"bool\" AS deprecated_feature");
-		exp_tlist[5] =String::from("NULL::\"bool\" AS transient_feature");
+		exp_tlist[4] =String::from("NULL::bool AS deprecated_feature");
+		exp_tlist[5] =String::from("NULL::\"char\" AS transient_feature");
 
 		assert_eq!(exp_tlist, t1_tlist, "Target list for pg14 should include \
 			only \"new_feature\"");
 
 		let t1_tlist = PgClass::tlist(PG_9_4);
-		exp_tlist[3] =String::from("NULL::\"text\" AS new_feature");
+		exp_tlist[3] =String::from("NULL::text AS new_feature");
 		exp_tlist[4] =String::from("deprecated_feature");
 		exp_tlist[5] =String::from("transient_feature");
 
@@ -410,9 +410,9 @@ mod test {
 			\"deprecated_feature\" and \"transient_feature\"\n");
 
 		let t1_tlist = PgClass::tlist(PG_9_3);
-		exp_tlist[3] =String::from("NULL::\"text\" AS new_feature");
+		exp_tlist[3] =String::from("NULL::text AS new_feature");
 		exp_tlist[4] =String::from("deprecated_feature");
-		exp_tlist[5] =String::from("NULL::\"bool\" AS transient_feature");
+		exp_tlist[5] =String::from("NULL::\"char\" AS transient_feature");
 
 		assert_eq!(exp_tlist, t1_tlist, "Target list for pg9.3 should include \
 			only \"deprecated_feature\"");

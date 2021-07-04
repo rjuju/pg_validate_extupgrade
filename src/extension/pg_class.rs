@@ -10,6 +10,8 @@ use crate::{compare::*,
 	elog::*,
 	extension::pg_attribute::Attribute,
 	extension::pg_index::Index,
+	extension::pg_statistic_ext::{ExtendedStatistic,
+		PG_MIN_VER as EXT_STATS_MIN_VER},
 	pgtype::*,
 };
 
@@ -41,6 +43,7 @@ CompareStruct! {
 	Relation {
 		attributes: Vec<Attribute>,
 		indexes: Option<Vec<Index>>,
+		stats: Option<HashMap<String, ExtendedStatistic>>,
 		class: PgClass,
 	}
 }
@@ -107,10 +110,18 @@ fn snap_one_class(client: &mut Transaction, oid: u32, pgver: u32)
 		true => Some(Index::snapshot(client, oid, pgver)),
 	};
 
+	let stats = match pgver {
+		EXT_STATS_MIN_VER..=PG_MAX => {
+			Some(ExtendedStatistic::snapshot(client, oid, pgver))
+		},
+		_ => None,
+	};
+
 	Some(
 		Relation {
 			ident: class.relname.clone(),
 			attributes: atts,
+			stats,
 			indexes,
 			class,
 		}
