@@ -12,6 +12,7 @@ use crate::{compare::*,
 	extension::pg_index::Index,
 	extension::pg_statistic_ext::{ExtendedStatistic,
 		PG_MIN_VER as EXT_STATS_MIN_VER},
+	pgdiff::SchemaDiff,
 	pgtype::*,
 };
 

@@ -4,6 +4,7 @@
  *---------------------------------------------------------------------------*/
 use std::collections::HashMap;
 use postgres::row::Row;
+use crate::pgdiff::{SchemaDiff, DiffSource};
 
 pub const PG_9_3: u32 = 90300;
 pub const PG_9_4: u32 = 90400;
@@ -16,12 +17,12 @@ pub const PG_MIN: u32 = 0;
 pub const PG_MAX: u32 = u32::MAX;
 
 pub trait Compare {
-	fn compare(&self, other: &Self, msg: &mut String);
+	fn compare(&self, other: &Self) -> Option<SchemaDiff>;
 	fn typname() -> &'static str {
 		panic!("Should not be called.");
 	}
 	fn value(&self) -> String {
-		format!("one")
+		panic!("Should not be called");
 	}
 }
 
@@ -33,14 +34,22 @@ pub trait Sql {
 impl<T: Compare> Compare for Vec<T>
 where T: std::fmt::Debug
 {
-	fn compare(&self, other: &Vec<T>, msg: &mut String) {
+	fn compare(&self, other: &Vec<T>) -> Option<SchemaDiff> {
+		let mut ms = vec![];
 
 		for (i,(a,b)) in self.iter().zip(other.iter()).enumerate() {
-			let mut res = String::new();
-			a.compare(b, &mut res);
-			if res != "" {
-				msg.push_str(&format!("elem {}:\n{}", i, res));
+			if let Some(m) = a.compare(b) {
+				ms.push((i, Box::new(m)));
 			}
+		}
+
+		match ms.len() {
+			0 => { None },
+			_ => { Some(SchemaDiff::VecDiff(
+					self.len(),
+					other.len(),
+					//<T>::typname(),
+					ms)) },
 		}
 	}
 
@@ -49,122 +58,99 @@ where T: std::fmt::Debug
 	}
 
 	fn value(&self) -> String {
-		format!("\n\t- {:?}\n", self)
+		format!("{:?}", self)
 	}
 }
 
 impl<T: Compare> Compare for Option<T> {
-	fn compare(&self, other: &Option<T>, msg: &mut String) {
+	fn compare(&self, other: &Option<T>) -> Option<SchemaDiff> {
 		if self.is_none() && !other.is_none() {
-			let res = format!("installed has no value, while upgraded \
-				has {}", other.value());
-			msg.push_str(&res);
-			return;
+			return Some(
+				SchemaDiff::NoneDiff(
+					DiffSource::Installed,
+					other.value(),
+				)
+			);
 		}
 
 		if !self.is_none() && other.is_none() {
-			let res = format!("upgraded has no value, while installed \
-				has {}", self.as_ref().unwrap().value());
-			msg.push_str(&res);
-			return;
+			return Some(
+				SchemaDiff::NoneDiff(
+					DiffSource::Upgraded,
+					self.value(),
+				));
 		}
 
 		if self.is_none() && other.is_none() {
-			return;
+			return None;
 		}
 
 		let src = self.as_ref().unwrap();
 		let dst = other.as_ref().unwrap();
 
-		src.compare(dst, msg);
+		src.compare(dst)
 	}
 
 	fn typname() -> &'static str {
 		<T>::typname()
 	}
+
+	fn value(&self) -> String {
+		match self {
+			None => {
+				assert!(false, "Should not be called");
+				panic!();
+			},
+			Some(v) => { v.value() },
+		}
+	}
 }
 
 impl<T: Compare> Compare for HashMap<String, T> {
-	fn compare(&self, other: &HashMap<String, T>, msg: &mut String) {
-		if self.len() < other.len() {
-			let mut res = format!("Upgraded version has {} more {t} ({}) than \
-				installed version ({})\nMissing {t}:\n",
-				other.len() - self.len(),
-				other.len(),
-				self.len(),
-				t = <T>::typname(),
-			);
+	fn compare(&self, other: &HashMap<String, T>) -> Option<SchemaDiff> {
+		let mut missings = Vec::new();
+		let mut diffs = Vec::new();
 
-			for ident in other.keys() {
-				if !self.contains_key(ident) {
-					res.push_str(&format!("\t- {}\n", ident));
+		let mut missing_ins = vec![];
+		for ident in other.keys() {
+			if !self.contains_key(ident) {
+				missing_ins.push(ident.clone());
+			}
+		}
+		if missing_ins.len() > 0 {
+			missings.push((DiffSource::Installed, missing_ins));
+		}
+
+		let mut missing_upg = vec![];
+		for ident in self.keys() {
+			match other.get(ident) {
+				None => {
+					missing_upg.push(ident.clone());
+				},
+				Some(o) => {
+					match self.get(ident).unwrap().compare(o) {
+						None => {},
+						Some(d) => {
+							diffs.push(d);
+						},
+					}
 				}
 			}
-
-			msg.push_str(&res);
-			return;
+		}
+		if missing_upg.len() > 0 {
+			missings.push((DiffSource::Upgraded, missing_upg));
 		}
 
-		if self.len() > other.len() {
-			let mut res = format!("Installed version has {} more {t} ({}) than \
-				upgraded version ({})\nMissing {t}:\n",
-				self.len() - other.len(),
+		if missings.len() == 0 && diffs.len() == 0 {
+			None
+		} else {
+			Some(SchemaDiff::HashMapDiff(
 				self.len(),
 				other.len(),
-				t = <T>::typname(),
-			);
-
-			for ident in self.keys() {
-				if !other.contains_key(ident) {
-					res.push_str(&format!("\t- {}\n", ident));
-				}
-			}
-
-			msg.push_str(&res);
-			return;
-		}
-
-
-		let mut missing = HashMap::new();
-		let mut res = String::new();
-		let mut tmp = String::new();
-
-		// Find missing or different objects in upgraded version
-		for (n, r) in self {
-			let other = other.get(n);
-
-			if other.is_none() {
-				tmp.push_str(&format!("\t- {}\n", n));
-			} else {
-				let other = other.unwrap();
-				r.compare(other, &mut res);
-			}
-		}
-		missing.insert("installed", tmp);
-
-		// Find missing objects in installed version.  Different objects are
-		// already checked.
-		tmp = String::new();
-		for (n, _) in other {
-			let src = self.get(n);
-
-			if src.is_none() {
-				tmp.push_str(&format!("\t- {}\n", n));
-			}
-		}
-		missing.insert("upgraded", tmp);
-
-		for (k, v) in missing {
-			if v != "" {
-				msg.push_str(&format!("Missing {} in {} version:\n",
-						<T>::typname(), k));
-				msg.push_str(&v);
-				msg.push('\n');
-			}
-		}
-
-		if res != "" {
-			msg.push_str(&res);
+				<T>::typname(),
+				missings,
+				diffs,
+			))
 		}
 	}
 
@@ -183,27 +169,34 @@ macro_rules! CompareStruct {
 		}
 
 		impl Compare for $struct {
-			fn compare(&self, other: &Self, msg: &mut String) {
+			fn compare(&self, other: &Self) -> Option<SchemaDiff> {
+				let mut vec = vec![];
+
 				$(
-					let mut res = String::new();
-					self.$field.compare(&other.$field, &mut res);
-					if res != "" {
+					if let Some(m) = self.$field.compare(&other.$field) {
+						let f;
+
 						// If this is an inner structure holding some catalog
 						// data, display the original error to avoid an extra
 						// indirection message.
 						if stringify!($type).starts_with("Pg") {
-							msg.push_str(&res);
+							f = None;
 						} else {
-							msg.push_str(&format!(
-									"Mismatch found for {} {} in {}:\n{}\n",
-									&stringify!($struct).to_string(),
-									&self.ident,
-									&stringify!($field).to_string(),
-									&res,
-							));
+							f = Some(stringify!($field).to_string());
 						}
+
+						vec.push((f, m));
 					}
 				)*
+
+				match vec.len() {
+					0 => None,
+					_ => Some(SchemaDiff::StructDiff(
+							stringify!($struct).to_string(),
+							self.ident.clone(),
+							vec,
+					))
+				}
 			}
 
 			fn typname() -> &'static str {
@@ -249,20 +242,23 @@ macro_rules! DbStruct {
 		}
 
 		impl Compare for $struct {
-			fn compare(&self, other: &Self, msg: &mut String) {
+			fn compare(&self, other: &Self) -> Option<SchemaDiff> {
+				let mut vec = vec![];
+
 				$(
-					let mut res = String::new();
-					self.$field.compare(&other.$field, &mut res);
-					if res != "" {
-						msg.push_str(&format!(
-								"Mismatch found for {} {} in {}:\n{}\n",
-								&stringify!($typname).to_string(),
-								&self.$ident,
-								&stringify!($field).to_string(),
-								&res,
-						));
+					if let Some(m) = self.$field.compare(&other.$field) {
+						vec.push((Some(stringify!($field).to_string()), m));
 					}
 				)*
+
+				match vec.len() {
+					0 => None,
+					_ => Some(SchemaDiff::StructDiff(
+							stringify!($struct).to_string(),
+							self.$ident.clone(),
+							vec,
+					))
+				}
 			}
 
 			fn typname() -> &'static str {

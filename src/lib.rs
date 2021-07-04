@@ -22,6 +22,7 @@ use crate::extension::Extension;
 mod compare;
 use crate::compare::Compare;
 
+mod pgdiff;
 mod pgtype;
 
 pub mod elog {
@@ -231,15 +232,13 @@ impl App {
 		self.updated(&mut transaction);
 		let to = Extension::snapshot(&self.extname, &mut transaction, pgver);
 
-		let mut res = String::new();
-		from.compare(&to, &mut res);
+		let res = from.compare(&to);
 
 		transaction.rollback().expect("Could not rollback the transaction");
 
-		if res == "" {
-			Ok(())
-		} else {
-			Err(res)
+		match res {
+			None => Ok(()),
+			Some(m) => Err(m.to_string()),
 		}
 	}
 }

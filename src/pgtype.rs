@@ -2,20 +2,25 @@
  * Author: Julien Rouhaud
  * Copyright: Copyright (c) 2021 : Julien Rouhaud - All rights reserved
  *---------------------------------------------------------------------------*/
-use crate::compare::{Compare};
+use crate::{
+	compare::{Compare},
+	pgdiff::SchemaDiff,
+};
 
 // Can't have those function as default implementation as it's not possible to
 // define extra Trait requirement for generic underlying types like Vec<T>
-fn diff<T>(a: T, b: T, msg: &mut String)
+fn diff<T>(a: T, b: T) -> Option<SchemaDiff>
 	where T: std::cmp::PartialEq + std::fmt::Display
 {
 	if a != b {
-		msg.push_str(&format!("\t- {}\n\t+ {}\n", a, b));
+		Some(SchemaDiff::Diff(a.to_string(), b.to_string()))
+	} else {
+		None
 	}
 }
 
 fn value<T: std::fmt::Display>(item: T) -> String {
-	format!("\n\t- {}\n", item)
+	format!("{}", item)
 }
 
 // postgres crate defines postgres char as an i8, so we have to add a lot of
@@ -25,10 +30,10 @@ fn value<T: std::fmt::Display>(item: T) -> String {
 pub type Char = i8;
 
 impl Compare for Char {
-	fn compare(&self, other: &Self, msg: &mut String) {
+	fn compare(&self, other: &Self) -> Option<SchemaDiff> {
 		let a: char = *self as u8 as char;
 		let b: char = *other as u8 as char;
-		diff(a, b, msg);
+		diff(a, b)
 	}
 
 	fn value(&self) -> String {
@@ -45,12 +50,13 @@ macro_rules! PgAlias {
 			pub type $pg = $rust;
 
 			impl Compare for $rust {
-				fn compare(&self, other: &Self, msg: &mut String) {
-					diff(self, other, msg);
+				fn compare(&self, other: &Self) -> Option<SchemaDiff> {
+					diff(self, other)
 				}
 
 				fn value(&self) -> String {
-					value(self)
+					//value(self)
+					format!("{}", self)
 				}
 			}
 		)*

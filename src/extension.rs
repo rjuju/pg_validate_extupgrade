@@ -9,7 +9,11 @@ use postgres::Transaction;
 mod pg_class;
 use pg_class::Relation;
 
-use crate::{compare::Compare, CompareStruct};
+use crate::{
+	compare::Compare,
+	CompareStruct,
+	pgdiff::SchemaDiff,
+};
 
 mod pg_attribute;
 mod pg_index;

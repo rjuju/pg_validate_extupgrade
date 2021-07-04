@@ -7,6 +7,7 @@ use postgres::{Row, Transaction};
 use crate::{
 	compare::*,
 	DbStruct,
+	pgdiff::SchemaDiff,
 	pgtype::*,
 };
 

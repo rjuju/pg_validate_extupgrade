@@ -3,6 +3,139 @@ pg_validate_extupgrade
 
 Tool to validate PostgreSQL extension upgrade script.
 
+Usage
+-----
+
+```
+USAGE:
+    pg_validate_extupgrade [OPTIONS] --extname <extname> --from <from> --to <to>
+
+FLAGS:
+        --help       Prints help information
+    -V, --version    Prints version information
+
+OPTIONS:
+    -d, --dbname <dbname>      database name
+    -e, --extname <extname>    extension to test
+        --from <from>          initial version of the extension
+    -h, --host <host>          database server host or socket directory
+    -p, --port <port>          database server port
+        --to <to>              upgraded version of the extension
+    -U, --user <user>          database user name
+```
+
+Note that the connection parameters default follow the same rules as PostgreSQL
+official client.
+
+Example
+-------
+
+```
+$ pg_validate_extupgrade -e pg_broken_extupgrade --from head-1.0 --to head-1.1
+Connected, server version 140000
+ERROR: Differences found:
+- mismatch found for Extension pg_broken_extupgrade:
+  - in relations:
+    installed and upgraded both have 8 Relation but some mismatch in them:
+      3 Relation missing in installed:
+        - public.papart
+        - public.missing2
+        - public.tbl1
+
+      3 Relation missing in upgraded:
+        - public.missing1
+        - public.broken_tbl1
+        - public.tbl3_id_seq
+
+      - mismatch found for Relation public.tbl0:
+        - in indexes:
+          - mismatch for elem #0:
+            - mismatch found for Index public.tbl0_id_idx:
+              - in inddef:
+                - CREATE INDEX tbl0_id_idx ON public.tbl0 USING btree (id) WHERE (id > 0)
+                + CREATE INDEX tbl0_id_idx ON public.tbl0 USING btree (id)
+
+        - in stats:
+          installed and upgraded both have 2 ExtendedStatistic but some mismatch in them:
+            - mismatch found for ExtendedStatistic public.tbl0_stats:
+              - in columns:
+                - id, val, ((id * 2))
+                + id, val
+
+            - mismatch found for ExtendedStatistic public.tbl0_stats_n:
+              - in stxkind:
+                - mismatch for elem #0:
+                  - f
+                  + d
+
+      - mismatch found for Relation public.tbl3:
+        - in attributes:
+          - mismatch for elem #0:
+            - mismatch found for Attribute id:
+              - in attnotnull:
+                - true
+                + false
+
+              - in attdefault:
+                - upgraded has no value, while installed has
+                  + nextval('public.tbl3_id_seq'::regclass)
+
+          - mismatch for elem #1:
+            - mismatch found for Attribute val:
+              - in atttype:
+                - character varying(30)
+                + text
+
+        - mismatch found for PgClass public.tbl3:
+          - in relam:
+            - installed has no value, while upgraded has
+              + heap
+
+          - in relkind:
+            - p
+            + r
+
+          - in relpartkey:
+            - upgraded has no value, while installed has
+              + LIST (id)
+
+      - mismatch found for Relation public.tbl4:
+        - in attributes:
+          - mismatch for elem #1:
+            - mismatch found for Attribute val:
+              - in atttype:
+                - character varying(30)
+                + character varying(20)
+
+      - mismatch found for Relation public.logged:
+        - mismatch found for PgClass public.logged:
+          - in relpersistence:
+            - u
+            + p
+
+          - in relacl:
+            - upgraded has no value, while installed has
+              + {rjuju=arwdDxt/rjuju}
+
+          - in reloptions:
+            - upgraded has no value, while installed has
+              + ["parallel_workers=2"]
+
+      - mismatch found for Relation public.tbl2:
+        - in attributes:
+          - mismatch for elem #0:
+            - mismatch found for Attribute broken_id:
+              - in attname:
+                - broken_id
+                + id
+
+          - mismatch for elem #1:
+            - mismatch found for Attribute val:
+              - in attcollation:
+                - upgraded has no value, while installed has
+                  + C
+```
+
 LICENSE
     Copyright (c) 2021 Julien Rouhaud - All rights reserved.
 
