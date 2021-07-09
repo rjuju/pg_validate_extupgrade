@@ -287,7 +287,7 @@ impl ToString for Conninfo {
 mod test {
 	use std::collections::HashMap;
 	use postgres::Row;
-	use super::{*, compare::*, pgtype::*};
+	use super::{*, compare::*, pgdiff::*, pgtype::*};
 
 	DbStruct! {
 		Attribute:attname:Attribute {
@@ -419,36 +419,35 @@ mod test {
 
 	#[test]
 	fn compare_same_relation() {
-		let mut msg = String::new();
 		let t1 = get_t1(140000);
 
-		t1.compare(&t1, &mut msg);
+		let msg = t1.compare(&t1);
 
-		assert_eq!("", msg, "Identical relation (v14) should not raise \
-			anything\n{}", msg);
+		assert!(msg.is_none(), "Identical relation (v14) should not raise \
+			anything\n{}", msg.unwrap().to_string());
 
-		let mut msg = String::new();
 		let t1 = get_t1(430000);
 
-		t1.compare(&t1, &mut msg);
+		let msg = t1.compare(&t1);
 
-		assert_eq!("", msg, "Identical relation (v43) should not raise \
-			anything\n{}", msg);
+		assert!(msg.is_none(), "Identical relation (v43) should not raise \
+			anything\n{}", msg.unwrap().to_string());
 	}
 
 	#[test]
 	fn compare_relation_ins_diff() {
-		let mut msg = String::new();
 		let mut t1_ins = get_t1(140000);
 		let t1_upg = get_t1(140000);
 
 		t1_ins.class.relkind = 'v' as i8;
 		t1_ins.attributes[0].attname = String::from("ins_id");
 
-		t1_ins.compare(&t1_upg, &mut msg);
+		let msg = t1_ins.compare(&t1_upg).expect("Should find differences")
+			.to_string();
 
 		assert!(
-			msg.contains("Relation t1 in relkind") &&
+			msg.contains("for Relation t1") &&
+			msg.contains("in relkind") &&
 			msg.contains("- v") &&
 			msg.contains("+ r") &&
 			!msg.contains("PgClass")
@@ -458,7 +457,8 @@ mod test {
 		);
 
 		assert!(
-			msg.contains("Attribute ins_id in attname") &&
+			msg.contains("Attribute ins_id") &&
+			msg.contains("in attname") &&
 			msg.contains("- ins_id") &&
 			msg.contains("+ id") &&
 			!msg.contains("PgClass")
@@ -470,17 +470,18 @@ mod test {
 
 	#[test]
 	fn compare_relation_upg_diff() {
-		let mut msg = String::new();
 		let t1_ins = get_t1(430000);
 		let mut t1_upg = get_t1(430000);
 
 		t1_upg.class.relkind = 'v' as i8;
 		t1_upg.attributes[0].attname = String::from("upg_id");
 
-		t1_ins.compare(&t1_upg, &mut msg);
+		let msg = t1_ins.compare(&t1_upg).expect("Should find differences")
+			.to_string();
 
 		assert!(
-			msg.contains("Relation t1 in relkind") &&
+			msg.contains("for Relation t1") &&
+			msg.contains("in relkind") &&
 			msg.contains("- r") &&
 			msg.contains("+ v") &&
 			!msg.contains("PgClass")
@@ -490,7 +491,8 @@ mod test {
 		);
 
 		assert!(
-			msg.contains("Attribute id in attname") &&
+			msg.contains("for Attribute id") &&
+			msg.contains("in attname") &&
 			msg.contains("- id") &&
 			msg.contains("+ upg_id") &&
 			!msg.contains("PgClass")
@@ -502,15 +504,15 @@ mod test {
 
 	#[test]
 	fn compare_relation_pgver_diff() {
-		let mut msg = String::new();
 		let t1_ins = get_t1(PG_10);
 		let t1_upg = get_t1(PG_14);
 
-		t1_ins.compare(&t1_upg, &mut msg);
+		let msg = t1_ins.compare(&t1_upg).expect("Should find differences")
+			.to_string();
 
-		assert_ne!("", msg, "Should find mismatch comparing ins to upg");
 		assert_eq!(true,
-			msg.contains("Relation t1 in new_feature") &&
+			msg.contains("for Relation t1") &&
+			msg.contains("in new_feature") &&
 			msg.contains("installed has no value") &&
 			msg.contains("upgraded has")
 			,
@@ -519,15 +521,15 @@ mod test {
 			msg
 		);
 
-		let mut msg = String::new();
 		let t1_ins = get_t1(PG_14);
 		let t1_upg = get_t1(PG_10);
 
-		t1_ins.compare(&t1_upg, &mut msg);
+		let msg = t1_ins.compare(&t1_upg).expect("Should find differences")
+			.to_string();
 
-		assert_ne!("", msg, "Should find mismatch comparing upg to ins");
 		assert_eq!(true,
-			msg.contains("Relation t1 in new_feature") &&
+			msg.contains("for Relation t1") &&
+			msg.contains("in new_feature") &&
 			msg.contains("upgraded has no value") &&
 			msg.contains("installed has")
 			,
@@ -539,15 +541,16 @@ mod test {
 
 	#[test]
 	fn compare_relation_opt_diff() {
-		let mut msg = String::new();
 		let mut t1_ins = get_t1(430000);
 		let t1_upg = get_t1(430000);
 
 		t1_ins.class.new_feature = Some(String::from("ins some value"));
-		t1_ins.compare(&t1_upg, &mut msg);
+		let msg = t1_ins.compare(&t1_upg).expect("Should find differences")
+			.to_string();
 
 		assert!(
-			msg.contains("Relation t1 in new_feature") &&
+			msg.contains("for Relation t1") &&
+			msg.contains("- in new_feature") &&
 			msg.contains("- ins some value") &&
 			msg.contains("+ some value")
 			,
@@ -556,15 +559,16 @@ mod test {
 			msg
 		);
 
-		let mut msg = String::new();
 		let t1_ins = get_t1(430000);
 		let mut t1_upg = get_t1(430000);
 
 		t1_upg.class.new_feature = Some(String::from("upg some value"));
-		t1_ins.compare(&t1_upg, &mut msg);
+		let msg = t1_ins.compare(&t1_upg).expect("Should find differences")
+			.to_string();
 
 		assert!(
-			msg.contains("Relation t1 in new_feature") &&
+			msg.contains("for Relation t1") &&
+			msg.contains("in new_feature") &&
 			msg.contains("- some value") &&
 			msg.contains("+ upg some value")
 			,
@@ -576,38 +580,49 @@ mod test {
 
 	#[test]
 	fn compare_same_ext() {
-		let mut msg = String::new();
 		let ext_ins = get_extension("empty_ext", None);
 
-		ext_ins.compare(&ext_ins, &mut msg);
+		let msg = ext_ins.compare(&ext_ins);
 
-		assert_eq!("", msg,
-			"Two empty extensions should be identical\n{}",
-			msg);
+		match msg {
+			Some(m) => {
+			assert!(false,
+				"Two empty extensions should be identical\n{}",
+				m.to_string());
+			},
+			None => {},
+		}
 
-		let mut msg = String::new();
 		let ext_ins = get_extension("empty_ext", Some(vec![]));
 
-		ext_ins.compare(&ext_ins, &mut msg);
+		let msg = ext_ins.compare(&ext_ins);
 
-		assert_eq!("", msg,
-			"Two extensions with empty rel list should be identical\n{}",
-			msg);
+		match msg {
+			Some(m) => {
+			assert!(false,
+				"Two extensions with empty rel list should be identical\n{}",
+				m.to_string());
+			},
+			None => {},
+		}
 
-		let mut msg = String::new();
 		let t1 = get_t1(140000);
 		let ext_ins = get_extension("ext_1_rel", Some(vec![t1]));
 
-		ext_ins.compare(&ext_ins, &mut msg);
+		let msg = ext_ins.compare(&ext_ins);
 
-		assert_eq!("", msg,
-			"Two extensions with same 1 rel should be identical\n{}",
-			msg);
+		match msg {
+			Some(m) => {
+			assert!(false,
+				"Two extensions with same 1 rel should be identical\n{}",
+				m.to_string());
+			},
+			None => {},
+		}
 	}
 
 	#[test]
 	fn compare_ext_diff_nb_rels() {
-		let mut msg = String::new();
 		let t1_a = get_t1(140000);
 		let t1_b = get_t1(140000);
 		let mut t2 = get_t1(140000);
@@ -617,18 +632,20 @@ mod test {
 		let ext_ins = get_extension("ext_1_rel", Some(vec![t1_a]));
 		let ext_upg = get_extension("ext_2_rel", Some(vec![t1_b, t2]));
 
-		ext_ins.compare(&ext_upg, &mut msg);
+		let msg = ext_ins.compare(&ext_upg).expect("Should find differences")
+			.to_string();
 
-		assert!(msg.contains("Upgraded version has 1 more Relation") &&
+		assert!(msg.contains("upgraded has 1 more Relation (2) \
+			than installed (1)") &&
 			msg.contains("- t2"),
 			"Should detect that upgraded extension has 1 more rel\n{}",
 			msg);
 
-		let mut msg = String::new();
+		let msg = ext_upg.compare(&ext_ins).expect("Should find differences")
+			.to_string();
 
-		ext_upg.compare(&ext_ins, &mut msg);
-
-		assert!(msg.contains("Installed version has 1 more Relation") &&
+		assert!(msg.contains("installed has 1 more Relation (2) \
+			than upgraded (1)") &&
 			msg.contains("- t2"),
 			"Should detect that installed extension has 1 more rel\n{}",
 			msg);
