@@ -119,12 +119,12 @@ impl SchemaDiff {
 					Ordering::Less => {
 						res.push_str(&format!(
 								"{i}{} has {} more {} ({}) than {} ({})\n",
-								DiffSource::Installed.str_self(),
+								DiffSource::Upgraded.str_self(),
 								s2 - s1,
 								typname,
-								s1,
-								DiffSource::Upgraded.str_self(),
 								s2,
+								DiffSource::Installed.str_self(),
+								s1,
 								i = ind0,
 						));
 					},
@@ -142,12 +142,12 @@ impl SchemaDiff {
 					Ordering::Greater => {
 						res.push_str(&format!(
 								"{i}{} has {} more {} ({}) than {} ({})\n",
-								DiffSource::Upgraded.str_self(),
+								DiffSource::Installed.str_self(),
 								s1 - s2,
 								typname,
-								s2,
-								DiffSource::Installed.str_self(),
 								s1,
+								DiffSource::Upgraded.str_self(),
+								s2,
 								i = ind0,
 						));
 					},
