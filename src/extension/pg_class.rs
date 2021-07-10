@@ -44,7 +44,7 @@ DbStruct! {
 CompareStruct! {
 	Relation {
 		attributes: Vec<Attribute>,
-		indexes: Option<Vec<Index>>,
+		indexes: HashMap<String, Index>,
 		stats: Option<HashMap<String, ExtendedStatistic>>,
 		constraints: HashMap<String, Constraint>,
 		class: PgClass,
@@ -103,10 +103,7 @@ fn snap_one_class(client: &mut Transaction, oid: u32, pgver: u32)
 	}
 
 	let atts = Attribute::snapshot(client, oid, pgver);
-	let indexes = match class.relhasindex {
-		false => None,
-		true => Some(Index::snapshot(client, oid, pgver)),
-	};
+	let indexes = Index::snapshot(client, oid, pgver);
 
 	let stats = match pgver {
 		EXT_STATS_MIN_VER..=PG_MAX => {

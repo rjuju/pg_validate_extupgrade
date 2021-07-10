@@ -1,3 +1,4 @@
+use std::collections::HashMap;
 use postgres::{Row, Transaction};
 
 use crate::{
@@ -16,9 +17,9 @@ DbStruct! {
 
 impl Index {
 	pub fn snapshot(client: &mut Transaction, relid: u32, pgver: u32)
-		-> Vec<Index>
+		-> HashMap<String, Index>
 	{
-		let mut indexes = Vec::new();
+		let mut indexes = HashMap::new();
 
 		let sql = format!("SELECT {} \
 			FROM pg_index \
@@ -31,7 +32,8 @@ impl Index {
 			.expect("Could net get pg_index rows");
 
 		for row in &rows {
-			indexes.push(Index::from_row(row));
+			let ind = Index::from_row(row);
+			indexes.insert(ind.indname.clone(), ind);
 		};
 
 		indexes
