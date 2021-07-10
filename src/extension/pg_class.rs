@@ -9,6 +9,7 @@ use crate::{compare::*,
 	CompareStruct, DbStruct,
 	elog::*,
 	extension::pg_attribute::Attribute,
+	extension::pg_constraint::Constraint,
 	extension::pg_index::Index,
 	extension::pg_statistic_ext::{ExtendedStatistic,
 		PG_MIN_VER as EXT_STATS_MIN_VER},
@@ -45,6 +46,7 @@ CompareStruct! {
 		attributes: Vec<Attribute>,
 		indexes: Option<Vec<Index>>,
 		stats: Option<HashMap<String, ExtendedStatistic>>,
+		constraints: HashMap<String, Constraint>,
 		class: PgClass,
 	}
 }
@@ -89,11 +91,6 @@ fn snap_one_class(client: &mut Transaction, oid: u32, pgver: u32)
 	assert!(!class.relkind != 'i' as Char);
 
 	// FIXME: Warn about properties not handled yet
-	if class.relchecks > 0 {
-		elog(WARNING,
-			&format!("{} - relchecks is not supported",
-			&class.relname));
-	}
 	if class.relhasrules {
 		elog(WARNING,
 			&format!("{} - relhasrules is not supported",
@@ -118,12 +115,15 @@ fn snap_one_class(client: &mut Transaction, oid: u32, pgver: u32)
 		_ => None,
 	};
 
+	let constraints = Constraint::snapshot_per_table(client, oid, pgver);
+
 	Some(
 		Relation {
 			ident: class.relname.clone(),
 			attributes: atts,
 			stats,
 			indexes,
+			constraints,
 			class,
 		}
 	)

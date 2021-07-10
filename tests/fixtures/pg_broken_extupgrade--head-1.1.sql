@@ -14,3 +14,7 @@ CREATE TABLE missing1(id integer);
 CREATE UNLOGGED TABLE logged(id integer, val text);
 ALTER TABLE logged SET (fillfactor = 80);
 REVOKE SELECT ON logged FROM public;
+CREATE TABLE main(id integer PRIMARY KEY);
+CREATE TABLE ref(id integer REFERENCES main (id));
+CREATE TABLE main2(id integer PRIMARY KEY, val text CHECK (length(val) > 2));
+CREATE TABLE ref2(id integer references main2 (id) ON UPDATE cascade ON DELETE cascade);
