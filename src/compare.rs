@@ -37,10 +37,31 @@ where T: std::fmt::Debug
 	fn compare(&self, other: &Vec<T>) -> Option<SchemaDiff> {
 		let mut ms = vec![];
 
-		for (i,(a,b)) in self.iter().zip(other.iter()).enumerate() {
-			if let Some(m) = a.compare(b) {
-				ms.push((i, Box::new(m)));
+		// First check all elements in the "self" array
+		for (i, a) in self.iter().enumerate() {
+			match other.get(i) {
+				None => {
+					ms.push((i, Box::new(SchemaDiff::NoneDiff(
+									DiffSource::Upgraded,
+									self.get(i).unwrap().value()),
+					)));
+				},
+				Some(v) => {
+					if let Some(m) = a.compare(v) {
+						ms.push((i, Box::new(m)));
+					}
+				}
 			}
+		}
+
+		// And check extraneous element in the "other" array, if if has more
+		// elements
+		for i in self.len()..other.len() {
+			ms.push((self.len() - 1 + i, Box::new(SchemaDiff::NoneDiff(
+							DiffSource::Installed,
+							other.get(i).unwrap().value(),
+							),
+			)));
 		}
 
 		match ms.len() {
@@ -254,7 +275,7 @@ macro_rules! DbStruct {
 				match vec.len() {
 					0 => None,
 					_ => Some(SchemaDiff::StructDiff(
-							stringify!($struct).to_string(),
+							stringify!($typname).to_string(),
 							self.$ident.clone(),
 							vec,
 					))

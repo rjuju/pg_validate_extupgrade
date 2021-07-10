@@ -18,3 +18,7 @@ CREATE TABLE main(id integer PRIMARY KEY);
 CREATE TABLE ref(id integer REFERENCES main (id));
 CREATE TABLE main2(id integer PRIMARY KEY, val text CHECK (length(val) > 2));
 CREATE TABLE ref2(id integer references main2 (id) ON UPDATE cascade ON DELETE cascade);
+CREATE TABLE options_1(id integer);
+ALTER TABLE options_1 SET (autovacuum_enabled = off, fillfactor = 90, parallel_workers = 4);
+CREATE TABLE options_2(id integer);
+ALTER TABLE options_2 SET (toast_tuple_target = 8000);

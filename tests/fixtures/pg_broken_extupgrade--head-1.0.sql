@@ -16,3 +16,7 @@ CREATE TABLE main(id integer);
 CREATE TABLE ref(id integer);
 CREATE TABLE main2(id integer primary key, val text CHECK (length(val) > 1));
 CREATE TABLE ref2(id integer references main2 (id) ON UPDATE no action ON DELETE restrict);
+CREATE TABLE options_1(id integer);
+ALTER TABLE options_1 SET (fillfactor = 80, toast_tuple_target = 8100);
+CREATE TABLE options_2(id integer);
+ALTER TABLE options_2 SET (fillfactor = 80, toast_tuple_target = 8100);
