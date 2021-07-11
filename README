@@ -248,6 +248,20 @@ ERROR: Differences found:
     ON SELECT TO public.v1 DO INSTEAD  SELECT 2;
                 + CREATE RULE "_RETURN" AS
     ON SELECT TO public.v1 DO INSTEAD  SELECT 1;
+
+      - mismatch found for Relation public.tbl_trig:
+        - in triggers:
+          installed and upgraded both have 2 Trigger but some mismatch in them:
+            - mismatch found for Trigger trig1:
+              - in tgdef:
+                - CREATE TRIGGER trig1 AFTER INSERT OR UPDATE ON public.tbl_trig FOR EACH STATEMENT EXECUTE FUNCTION public.ftrig1()
+                + CREATE TRIGGER trig1 AFTER INSERT OR UPDATE ON public.tbl_trig FOR EACH ROW EXECUTE FUNCTION public.ftrig1()
+
+            - mismatch found for Trigger trig2:
+              - in tgdef:
+                - CREATE TRIGGER trig2 BEFORE INSERT ON public.tbl_trig FOR EACH ROW EXECUTE FUNCTION public.ftrig3()
+                + CREATE TRIGGER trig2 BEFORE INSERT ON public.tbl_trig FOR EACH ROW EXECUTE FUNCTION public.ftrig2()
+
 ```
 
 LICENSE

@@ -7,11 +7,11 @@ use postgres::{Row, Transaction};
 
 use crate::{compare::*,
 	CompareStruct, DbStruct,
-	elog::*,
 	extension::pg_attribute::Attribute,
 	extension::pg_constraint::Constraint,
 	extension::pg_index::Index,
 	extension::pg_rewrite::Rewrite,
+	extension::pg_trigger::Trigger,
 	extension::pg_statistic_ext::{ExtendedStatistic,
 		PG_MIN_VER as EXT_STATS_MIN_VER},
 	pgdiff::SchemaDiff,
@@ -49,6 +49,7 @@ CompareStruct! {
 		stats: Option<HashMap<String, ExtendedStatistic>>,
 		constraints: HashMap<String, Constraint>,
 		rules: HashMap<String, Rewrite>,
+		triggers: HashMap<String, Trigger>,
 		class: PgClass,
 	}
 }
@@ -92,13 +93,6 @@ fn snap_one_class(client: &mut Transaction, oid: u32, pgver: u32)
 	// be handled explicitly
 	assert!(!class.relkind != 'i' as Char);
 
-	// FIXME: Warn about properties not handled yet
-	if class.relhastriggers {
-		elog(WARNING,
-			&format!("{} - relhastriggers is not supported",
-			&class.relname));
-	}
-
 	let atts = Attribute::snapshot(client, oid, pgver);
 	let indexes = Index::snapshot(client, oid, pgver);
 
@@ -111,6 +105,7 @@ fn snap_one_class(client: &mut Transaction, oid: u32, pgver: u32)
 
 	let constraints = Constraint::snapshot_per_table(client, oid, pgver);
 	let rules = Rewrite::snapshot(client, oid, pgver);
+	let triggers = Trigger::snapshot(client, oid, pgver);
 
 	Some(
 		Relation {
@@ -120,6 +115,7 @@ fn snap_one_class(client: &mut Transaction, oid: u32, pgver: u32)
 			indexes,
 			constraints,
 			rules,
+			triggers,
 			class,
 		}
 	)
