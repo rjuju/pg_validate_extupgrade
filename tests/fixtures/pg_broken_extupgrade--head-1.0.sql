@@ -20,3 +20,8 @@ CREATE TABLE options_1(id integer);
 ALTER TABLE options_1 SET (fillfactor = 80, toast_tuple_target = 8100);
 CREATE TABLE options_2(id integer);
 ALTER TABLE options_2 SET (fillfactor = 80, toast_tuple_target = 8100);
+CREATE VIEW v1 AS select 1;
+CREATE TABLE tbl_rewrite(id integer);
+CREATE RULE r1 AS ON UPDATE TO tbl_rewrite DO ALSO DELETE FROM v1;
+CREATE RULE r2 AS ON INSERT TO tbl_rewrite DO NOTHING;
+CREATE RULE r3 AS ON DELETE TO tbl_rewrite DO NOTHING;

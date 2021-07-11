@@ -18,6 +18,7 @@ use crate::{
 mod pg_attribute;
 mod pg_constraint;
 mod pg_index;
+mod pg_rewrite;
 mod pg_statistic_ext;
 
 CompareStruct! {

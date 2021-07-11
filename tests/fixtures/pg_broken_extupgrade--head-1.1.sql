@@ -22,3 +22,8 @@ CREATE TABLE options_1(id integer);
 ALTER TABLE options_1 SET (autovacuum_enabled = off, fillfactor = 90, parallel_workers = 4);
 CREATE TABLE options_2(id integer);
 ALTER TABLE options_2 SET (toast_tuple_target = 8000);
+CREATE VIEW v1 AS select 2;
+CREATE TABLE tbl_rewrite(id integer);
+CREATE RULE r1 AS ON INSERT TO tbl_rewrite DO ALSO DELETE FROM v1;
+CREATE RULE r2 AS ON INSERT TO tbl_rewrite WHERE id = 0 DO NOTHING;
+CREATE RULE r4 AS ON DELETE TO tbl_rewrite DO NOTHING;

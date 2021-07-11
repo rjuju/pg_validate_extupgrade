@@ -11,6 +11,7 @@ use crate::{compare::*,
 	extension::pg_attribute::Attribute,
 	extension::pg_constraint::Constraint,
 	extension::pg_index::Index,
+	extension::pg_rewrite::Rewrite,
 	extension::pg_statistic_ext::{ExtendedStatistic,
 		PG_MIN_VER as EXT_STATS_MIN_VER},
 	pgdiff::SchemaDiff,
@@ -47,6 +48,7 @@ CompareStruct! {
 		indexes: HashMap<String, Index>,
 		stats: Option<HashMap<String, ExtendedStatistic>>,
 		constraints: HashMap<String, Constraint>,
+		rules: HashMap<String, Rewrite>,
 		class: PgClass,
 	}
 }
@@ -91,11 +93,6 @@ fn snap_one_class(client: &mut Transaction, oid: u32, pgver: u32)
 	assert!(!class.relkind != 'i' as Char);
 
 	// FIXME: Warn about properties not handled yet
-	if class.relhasrules {
-		elog(WARNING,
-			&format!("{} - relhasrules is not supported",
-			&class.relname));
-	}
 	if class.relhastriggers {
 		elog(WARNING,
 			&format!("{} - relhastriggers is not supported",
@@ -113,6 +110,7 @@ fn snap_one_class(client: &mut Transaction, oid: u32, pgver: u32)
 	};
 
 	let constraints = Constraint::snapshot_per_table(client, oid, pgver);
+	let rules = Rewrite::snapshot(client, oid, pgver);
 
 	Some(
 		Relation {
@@ -121,6 +119,7 @@ fn snap_one_class(client: &mut Transaction, oid: u32, pgver: u32)
 			stats,
 			indexes,
 			constraints,
+			rules,
 			class,
 		}
 	)

@@ -214,6 +214,40 @@ ERROR: Differences found:
         - in relpartkey:
           - upgraded has no value, while installed has
             + LIST (id)
+
+      - mismatch found for Relation public.tbl_rewrite:
+        - in rules:
+          installed and upgraded both have 3 Rule but some mismatch in them:
+            1 Rule missing in installed:
+              - r3
+
+            1 Rule missing in upgraded:
+              - r4
+
+            - mismatch found for Rule r1:
+              - in inddef:
+                - CREATE RULE r1 AS
+    ON INSERT TO public.tbl_rewrite DO  DELETE FROM public.v1;
+                + CREATE RULE r1 AS
+    ON UPDATE TO public.tbl_rewrite DO  DELETE FROM public.v1;
+
+            - mismatch found for Rule r2:
+              - in inddef:
+                - CREATE RULE r2 AS
+    ON INSERT TO public.tbl_rewrite
+   WHERE (new.id = 0) DO NOTHING;
+                + CREATE RULE r2 AS
+    ON INSERT TO public.tbl_rewrite DO NOTHING;
+
+      - mismatch found for Relation public.v1:
+        - in rules:
+          installed and upgraded both have 1 Rule but some mismatch in them:
+            - mismatch found for Rule _RETURN:
+              - in inddef:
+                - CREATE RULE "_RETURN" AS
+    ON SELECT TO public.v1 DO INSTEAD  SELECT 2;
+                + CREATE RULE "_RETURN" AS
+    ON SELECT TO public.v1 DO INSTEAD  SELECT 1;
 ```
 
 LICENSE
