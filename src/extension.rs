@@ -9,6 +9,9 @@ use postgres::Transaction;
 mod pg_class;
 use pg_class::Relation;
 
+mod pg_proc;
+use pg_proc::Routine;
+
 use crate::{
 	compare::Compare,
 	CompareStruct,
@@ -25,6 +28,7 @@ mod pg_statistic_ext;
 CompareStruct! {
 	Extension {
 		relations: Option<HashMap<String, Relation>>,
+		routines: Option<HashMap<String, Routine>>,
 	}
 }
 
@@ -35,6 +39,7 @@ impl Extension {
 		let mut ext = Extension {
 			ident: String::from(extname),
 			relations: None,
+			routines: None,
 		};
 
 		client.execute("SET search_path TO pg_catalog", &[])
@@ -57,7 +62,11 @@ impl Extension {
 				"pg_class" => {
 					ext.relations = Some(Relation::snapshot(client,
 							objids, pgver));
-				}
+				},
+				"pg_proc" => {
+					ext.routines = Some(Routine::snapshot(client,
+							objids, pgver));
+				},
 				_ => {
 					println!("Classid \"{}\" not handled", classid);
 				}

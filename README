@@ -262,6 +262,60 @@ ERROR: Differences found:
                 - CREATE TRIGGER trig2 BEFORE INSERT ON public.tbl_trig FOR EACH ROW EXECUTE FUNCTION public.ftrig3()
                 + CREATE TRIGGER trig2 BEFORE INSERT ON public.tbl_trig FOR EACH ROW EXECUTE FUNCTION public.ftrig2()
 
+  - in routines:
+    installed and upgraded both have 6 Routine but some mismatch in them:
+      2 Routine missing in installed:
+        - public.func_2(integer DEFAULT 1, OUT integer)
+        - public.ftrig2()
+
+      2 Routine missing in upgraded:
+        - public.func_2(integer, integer)
+        - public.ftrig3()
+
+      - mismatch found for Routine public.func_1(integer):
+        - in prolang:
+          - sql
+          + plpgsql
+
+        - in prorows:
+          - 1000
+          + 0
+
+        - in prorettype:
+          - SETOF boolean
+          + void
+
+
+      - mismatch found for Routine public.func_3(integer):
+        - in source:
+--- installed
+--- upgraded
+@@ -1,7 +1,6 @@
+
+     BEGIN
+         RAISE NOTICE 'some message';
+-        -- some comment
+         PERFORM pg_sleep(1);
+         RAISE NOTICE 'some other message';
+     END;
+      - mismatch found for Routine public.func_4():
+        - in prokind:
+          - p
+          + f
+
+        - in prorettype:
+          - installed has no value, while upgraded has
+            + boolean
+
+        - in source:
+--- installed
+--- upgraded
+@@ -1,4 +1,4 @@
+ BEGIN ATOMIC
+- SELECT 2;
++ SELECT 1;
+  SELECT false AS bool;
+ END
 ```
 
 LICENSE

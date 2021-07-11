@@ -30,3 +30,17 @@ CREATE FUNCTION ftrig1() RETURNS trigger AS $$ BEGIN END; $$ LANGUAGE plpgsql;
 CREATE TRIGGER trig1 AFTER INSERT OR UPDATE ON tbl_trig FOR EACH ROW EXECUTE FUNCTION ftrig1();
 CREATE FUNCTION ftrig2() RETURNS trigger AS $$ BEGIN END; $$ LANGUAGE plpgsql;
 CREATE TRIGGER trig2 BEFORE INSERT ON tbl_trig FOR EACH ROW EXECUTE FUNCTION ftrig2();
+CREATE FUNCTION func_1(integer) RETURNS void AS $$ ; $$ language plpgsql;
+CREATE FUNCTION func_2(integer = 1, out integer) RETURNS integer AS $$ ; $$ language plpgsql;
+CREATE FUNCTION func_3(integer) RETURNS void AS $$
+    BEGIN
+        RAISE NOTICE 'some message';
+        PERFORM pg_sleep(1);
+        RAISE NOTICE 'some other message';
+    END;
+$$ LANGUAGE plpgsql;
+CREATE FUNCTION func_4() RETURNS bool
+BEGIN ATOMIC
+    SELECT 1;
+    SELECT false;
+END;

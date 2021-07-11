@@ -8,7 +8,9 @@ use crate::pgdiff::{SchemaDiff, DiffSource};
 
 pub const PG_9_3: u32 = 90300;
 pub const PG_9_4: u32 = 90400;
+pub const PG_9_6: u32 = 90600;
 pub const PG_10: u32 = 100000;
+pub const PG_11: u32 = 110000;
 pub const PG_12: u32 = 120000;
 pub const PG_13: u32 = 130000;
 pub const PG_14: u32 = 140000;
@@ -253,7 +255,7 @@ macro_rules! DbStruct {
 	// This part of the macro generate the final struct
 	($struct:ident:$ident:ident:$typname:ident {
 		$(
-			$field:ident:$type:ty $(=($expr:literal))?
+			$field:ident:$type:ty $(=($expr:expr))?
 			$( { $($pgmin:ident)? .. $($pgmax:ident)? } )?
 		),*,
 	}) => {

@@ -71,6 +71,7 @@ macro_rules! PgAlias {
 PgAlias!{
 	Bool = bool,
 	Integer = i32,
+	Real = f32,
 	Smallint = i16,
 }
 
