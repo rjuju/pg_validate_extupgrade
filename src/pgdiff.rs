@@ -30,6 +30,8 @@ impl DiffSource {
 pub enum SchemaDiff {
 	// (installed, upgraded)
 	Diff(String, String),
+	// (what, installed, upgraded)
+	NamedDiff(String, String, String),
 	// (installed len, upgraded len, diffs)
 	VecDiff(usize, usize, Vec<(usize, Box<SchemaDiff>)>),
 	NoneDiff(DiffSource, String),
@@ -55,6 +57,12 @@ impl SchemaDiff {
 				format!(
 					"{i}- {}\n{i}+ {}\n\n",
 					a, b, i = ind0,
+				)
+			},
+			SchemaDiff::NamedDiff(w, a, b) => {
+				format!(
+					"{i}- mismatch found for {}:\n{i1}- {}\n{i1}+ {}\n\n",
+					w, a, b, i = ind0, i1 = ind1,
 				)
 			},
 			SchemaDiff::VecDiff(s1, s2, diffs) => {

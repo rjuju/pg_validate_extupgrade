@@ -28,8 +28,8 @@ DbStruct! {
 		attinhcount: Integer,
 		attcollation: Option<Name> = ("c.collname"),
 		attacl: Option<Text> = ("attacl::text"),
-		attoptions: Option<Vec<Text>>,
-		attfdwoptions: Option<Vec<Text>>,
+		attoptions: Option<ClassOptions>,
+		attfdwoptions: Option<ClassOptions>,
 	}
 }
 

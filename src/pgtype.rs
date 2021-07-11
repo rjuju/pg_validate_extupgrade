@@ -2,9 +2,12 @@
  * Author: Julien Rouhaud
  * Copyright: Copyright (c) 2021 : Julien Rouhaud - All rights reserved
  *---------------------------------------------------------------------------*/
+use std::collections::HashMap;
+use postgres::types::{FromSql, Type};
+
 use crate::{
 	compare::{Compare},
-	pgdiff::SchemaDiff,
+	pgdiff::{DiffSource, SchemaDiff},
 };
 
 // Can't have those function as default implementation as it's not possible to
@@ -73,5 +76,94 @@ PgAlias!{
 }
 
 // Additional aliases for rust types having multiple corresponding postgres
-// types
+// types, and some extra custom types
 pub type Text = String;
+
+// Used for text[] column storing sets of key=value
+#[derive(Debug)]
+pub struct ClassOptions {
+	options: HashMap<String, String>,
+}
+
+impl<'a> FromSql<'a> for ClassOptions {
+	fn from_sql(ty: &Type, raw:&'a [u8])
+		-> Result<ClassOptions, Box<dyn std::error::Error + Sync + Send>>
+	{
+		let mut options = HashMap::new();
+		let vec = Vec::<String>::from_sql(ty, raw)?;
+
+		for e in vec.iter() {
+			let option: Vec<&str> = e.split("=").collect();
+
+			if option.len() != 2 {
+				panic!("Expected key=value format, found {}", e);
+			}
+
+			options.insert(String::from(option[0]), String::from(option[1]));
+		}
+
+		Ok(ClassOptions { options })
+	}
+
+	fn accepts(ty: &Type) -> bool {
+		Vec::<String>::accepts(ty)
+	}
+}
+
+impl Compare for ClassOptions {
+	fn compare(&self, other: &Self) -> Option<SchemaDiff> {
+		let mut missings = Vec::new();
+		let mut diffs = Vec::new();
+
+		let mut missing_ins = vec![];
+		for ident in other.options.keys() {
+			if !self.options.contains_key(ident) {
+				missing_ins.push(ident.clone());
+			}
+		}
+		if missing_ins.len() > 0 {
+			missings.push((DiffSource::Installed, missing_ins));
+		}
+
+		let mut missing_upg = vec![];
+		for ident in self.options.keys() {
+			match other.options.get(ident) {
+				None => {
+					missing_upg.push(ident.clone());
+				},
+				Some(o) => {
+					if self.options.get(ident).unwrap() != o {
+						diffs.push({
+							SchemaDiff::NamedDiff(String::from(ident),
+								self.options.get(ident).unwrap().clone(),
+								o.clone(),
+							)
+						})
+					}
+				}
+			}
+		}
+		if missing_upg.len() > 0 {
+			missings.push((DiffSource::Upgraded, missing_upg));
+		}
+
+		if missings.len() == 0 && diffs.len() == 0 {
+			None
+		} else {
+			Some(SchemaDiff::HashMapDiff(
+				self.options.len(),
+				other.options.len(),
+				"Option",
+				missings,
+				diffs,
+			))
+		}
+	}
+
+	fn value(&self) -> String {
+		self.options.iter()
+			.map(|(k, v)| { format!("{}={}", k, v) })
+			.collect::<Vec<String>>()
+			.join(",")
+	}
+}

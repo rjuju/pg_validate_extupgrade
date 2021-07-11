@@ -36,7 +36,7 @@ DbStruct! {
 		relispartition: Bool {PG_10..},
 		relpartkey: Text = ("pg_get_partkeydef(c.oid)") {PG_10..},
 		relacl: Option<Text> = ("relacl::text"),
-		reloptions: Option<Vec<Text>>,
+		reloptions: Option<ClassOptions>,
 		relpartbound: Text = ("pg_get_expr(c.relpartbound, c.oid)") {PG_10..},
 	}
 }
