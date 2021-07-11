@@ -201,12 +201,19 @@ macro_rules! CompareStruct {
 						// data, display the original error to avoid an extra
 						// indirection message.
 						if stringify!($type).starts_with("Pg") {
-							f = None;
+							match m {
+								SchemaDiff::StructDiff(_,_,mut v) => {
+									vec.append(&mut v);
+								},
+								_ => {
+									panic!("Expected a StructDiff, found:\n \
+										{:#?}", m);
+								}
+							};
 						} else {
 							f = Some(stringify!($field).to_string());
+							vec.push((f, m));
 						}
-
-						vec.push((f, m));
 					}
 				)*
 

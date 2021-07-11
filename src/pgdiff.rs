@@ -4,6 +4,7 @@
  *---------------------------------------------------------------------------*/
 use std::cmp::Ordering;
 
+#[derive(Debug)]
 pub enum DiffSource {
 	Installed,
 	Upgraded,
@@ -25,6 +26,7 @@ impl DiffSource {
 	}
 }
 
+#[derive(Debug)]
 pub enum SchemaDiff {
 	// (installed, upgraded)
 	Diff(String, String),
