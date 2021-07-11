@@ -3,6 +3,7 @@
  * Copyright: Copyright (c) 2021 : Julien Rouhaud - All rights reserved
  *---------------------------------------------------------------------------*/
 use std::collections::HashMap;
+use diffy::create_patch;
 use postgres::types::{FromSql, Type};
 
 use crate::{
@@ -12,7 +13,7 @@ use crate::{
 
 // Can't have those function as default implementation as it's not possible to
 // define extra Trait requirement for generic underlying types like Vec<T>
-fn diff<T>(a: T, b: T) -> Option<SchemaDiff>
+fn diff<'a, T>(a: T, b: T) -> Option<SchemaDiff<'a>>
 	where T: std::cmp::PartialEq + std::fmt::Display
 {
 	if a != b {
@@ -32,8 +33,8 @@ fn value<T: std::fmt::Display>(item: T) -> String {
 // i8 for anything else than postgres char.
 pub type Char = i8;
 
-impl Compare for Char {
-	fn compare(&self, other: &Self) -> Option<SchemaDiff> {
+impl<'a> Compare<'a> for Char {
+	fn compare(&self, other: &Self) -> Option<SchemaDiff<'a>> {
 		let a: char = *self as u8 as char;
 		let b: char = *other as u8 as char;
 		diff(a, b)
@@ -52,13 +53,12 @@ macro_rules! PgAlias {
 		$(
 			pub type $pg = $rust;
 
-			impl Compare for $rust {
-				fn compare(&self, other: &Self) -> Option<SchemaDiff> {
+			impl<'a> Compare<'a> for $rust {
+				fn compare(&self, other: &Self) -> Option<SchemaDiff<'a>> {
 					diff(self, other)
 				}
 
 				fn value(&self) -> String {
-					//value(self)
 					format!("{}", self)
 				}
 			}
@@ -71,13 +71,37 @@ macro_rules! PgAlias {
 PgAlias!{
 	Bool = bool,
 	Integer = i32,
-	Name = String,
 	Smallint = i16,
 }
 
 // Additional aliases for rust types having multiple corresponding postgres
 // types, and some extra custom types
+pub type Name = String;
 pub type Text = String;
+
+impl<'a> Compare<'a> for String {
+	fn compare(&'a self, other: &'a Self) -> Option<SchemaDiff<'a>> {
+		// If the content has at least one newline, use a diffy::Patch for
+		// better readibility
+		if self.matches('\n').count() > 0 {
+			let patch = create_patch(&self, &other);
+
+			// There's a mismatch if diffy returns at least one chunk
+			match patch.hunks().len() {
+				0 => { None },
+				_ => { Some(SchemaDiff::UnifiedDiff(patch)) },
+			}
+		}
+		else {
+			// Otherwise return a simple Diff
+			diff(self, other)
+		}
+	}
+
+	fn value(&self) -> String {
+		format!("{}", self)
+	}
+}
 
 // Used for text[] column storing sets of key=value
 #[derive(Debug)]
@@ -110,33 +134,33 @@ impl<'a> FromSql<'a> for ClassOptions {
 	}
 }
 
-impl Compare for ClassOptions {
-	fn compare(&self, other: &Self) -> Option<SchemaDiff> {
-		let mut missings = Vec::new();
+impl<'a> Compare<'a> for ClassOptions {
+	fn compare(&'a self, other: &'a Self) -> Option<SchemaDiff<'a>> {
+		let mut missings:Vec<(DiffSource, Vec<&str>)> = Vec::new();
 		let mut diffs = Vec::new();
 
-		let mut missing_ins = vec![];
+		let mut missing_ins:Vec<&str> = vec![];
 		for ident in other.options.keys() {
 			if !self.options.contains_key(ident) {
-				missing_ins.push(ident.clone());
+				missing_ins.push(&ident[..]);
 			}
 		}
 		if missing_ins.len() > 0 {
 			missings.push((DiffSource::Installed, missing_ins));
 		}
 
-		let mut missing_upg = vec![];
+		let mut missing_upg:Vec<&str> = vec![];
 		for ident in self.options.keys() {
 			match other.options.get(ident) {
 				None => {
-					missing_upg.push(ident.clone());
+					missing_upg.push(&ident[..]);
 				},
 				Some(o) => {
 					if self.options.get(ident).unwrap() != o {
 						diffs.push({
-							SchemaDiff::NamedDiff(String::from(ident),
-								self.options.get(ident).unwrap().clone(),
-								o.clone(),
+							SchemaDiff::NamedDiff(ident,
+								self.options.get(ident).unwrap(),
+								o,
 							)
 						})
 					}

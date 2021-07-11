@@ -419,7 +419,7 @@ mod test {
 
 	#[test]
 	fn compare_same_relation() {
-		let t1 = get_t1(140000);
+		let t1 = get_t1(PG_14);
 
 		let msg = t1.compare(&t1);
 
@@ -436,8 +436,8 @@ mod test {
 
 	#[test]
 	fn compare_relation_ins_diff() {
-		let mut t1_ins = get_t1(140000);
-		let t1_upg = get_t1(140000);
+		let mut t1_ins = get_t1(PG_14);
+		let t1_upg = get_t1(PG_14);
 
 		t1_ins.class.relkind = 'v' as i8;
 		t1_ins.attributes[0].attname = String::from("ins_id");
@@ -606,7 +606,7 @@ mod test {
 			None => {},
 		}
 
-		let t1 = get_t1(140000);
+		let t1 = get_t1(PG_14);
 		let ext_ins = get_extension("ext_1_rel", Some(vec![t1]));
 
 		let msg = ext_ins.compare(&ext_ins);
@@ -623,9 +623,9 @@ mod test {
 
 	#[test]
 	fn compare_ext_diff_nb_rels() {
-		let t1_a = get_t1(140000);
-		let t1_b = get_t1(140000);
-		let mut t2 = get_t1(140000);
+		let t1_a = get_t1(PG_14);
+		let t1_b = get_t1(PG_14);
+		let mut t2 = get_t1(PG_14);
 
 		t2.class.relname = String::from("t2");
 
@@ -649,5 +649,23 @@ mod test {
 			msg.contains("- t2"),
 			"Should detect that installed extension has 1 more rel\n{}",
 			msg);
+	}
+
+	#[test]
+	fn compare_unified_diff() {
+		let mut t1_a = get_t1(PG_14);
+		let mut t1_b = get_t1(PG_14);
+
+		t1_a.class.new_feature = Some(String::from("some data\n-- something\nother"));
+		t1_b.class.new_feature = Some(String::from("some data\n-- some thing\nother"));
+
+		let msg = t1_a.compare(&t1_b).expect("Should find differences")
+			.to_string();
+
+		assert!(msg.contains("- mismatch found for Relation t1:") &&
+			msg.contains("in new_feature:") &&
+			msg.contains("--- installed\n+++ upgraded\n") &&
+			msg.contains("some data\n--- something\n+-- some thing\n other"),
+			"Should find a unified diff:\n {:#?}", msg);
 	}
 }

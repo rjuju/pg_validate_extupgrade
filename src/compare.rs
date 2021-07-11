@@ -16,8 +16,8 @@ pub const PG_14: u32 = 140000;
 pub const PG_MIN: u32 = 0;
 pub const PG_MAX: u32 = u32::MAX;
 
-pub trait Compare {
-	fn compare(&self, other: &Self) -> Option<SchemaDiff>;
+pub trait Compare<'a> {
+	fn compare(&'a self, other: &'a Self) -> Option<SchemaDiff<'a>>;
 	fn typname() -> &'static str {
 		panic!("Should not be called.");
 	}
@@ -31,10 +31,10 @@ pub trait Sql {
 	fn from_row(row: &Row) -> Self;
 }
 
-impl<T: Compare> Compare for Vec<T>
+impl<'a, T: Compare<'a>> Compare<'a> for Vec<T>
 where T: std::fmt::Debug
 {
-	fn compare(&self, other: &Vec<T>) -> Option<SchemaDiff> {
+	fn compare(&'a self, other: &'a Vec<T>) -> Option<SchemaDiff<'a>> {
 		let mut ms = vec![];
 
 		// First check all elements in the "self" array
@@ -83,8 +83,8 @@ where T: std::fmt::Debug
 	}
 }
 
-impl<T: Compare> Compare for Option<T> {
-	fn compare(&self, other: &Option<T>) -> Option<SchemaDiff> {
+impl<'a, T: Compare<'a>> Compare<'a> for Option<T> {
+	fn compare(&'a self, other: &'a Option<T>) -> Option<SchemaDiff<'a>> {
 		if self.is_none() && !other.is_none() {
 			return Some(
 				SchemaDiff::NoneDiff(
@@ -127,26 +127,26 @@ impl<T: Compare> Compare for Option<T> {
 	}
 }
 
-impl<T: Compare> Compare for HashMap<String, T> {
-	fn compare(&self, other: &HashMap<String, T>) -> Option<SchemaDiff> {
-		let mut missings = Vec::new();
+impl<'a, T: Compare<'a>> Compare<'a> for HashMap<String, T> {
+	fn compare(&'a self, other: &'a HashMap<String, T>) -> Option<SchemaDiff<'a>> {
+		let mut missings:Vec<(DiffSource, Vec<&str>)> = Vec::new();
 		let mut diffs = Vec::new();
 
-		let mut missing_ins = vec![];
+		let mut missing_ins:Vec<&str> = vec![];
 		for ident in other.keys() {
 			if !self.contains_key(ident) {
-				missing_ins.push(ident.clone());
+				missing_ins.push(&ident[..]);
 			}
 		}
 		if missing_ins.len() > 0 {
 			missings.push((DiffSource::Installed, missing_ins));
 		}
 
-		let mut missing_upg = vec![];
+		let mut missing_upg:Vec<&str> = vec![];
 		for ident in self.keys() {
 			match other.get(ident) {
 				None => {
-					missing_upg.push(ident.clone());
+					missing_upg.push(&ident[..]);
 				},
 				Some(o) => {
 					match self.get(ident).unwrap().compare(o) {
@@ -189,8 +189,8 @@ macro_rules! CompareStruct {
 			$($field: $type),*
 		}
 
-		impl Compare for $struct {
-			fn compare(&self, other: &Self) -> Option<SchemaDiff> {
+		impl<'a> Compare<'a> for $struct {
+			fn compare(&'a self, other: &'a Self) -> Option<SchemaDiff<'a>> {
 				let mut vec = vec![];
 
 				$(
@@ -211,7 +211,7 @@ macro_rules! CompareStruct {
 								}
 							};
 						} else {
-							f = Some(stringify!($field).to_string());
+							f = Some(stringify!($field));
 							vec.push((f, m));
 						}
 					}
@@ -220,8 +220,8 @@ macro_rules! CompareStruct {
 				match vec.len() {
 					0 => None,
 					_ => Some(SchemaDiff::StructDiff(
-							stringify!($struct).to_string(),
-							self.ident.clone(),
+							stringify!($struct),
+							&self.ident,
 							vec,
 					))
 				}
@@ -269,21 +269,21 @@ macro_rules! DbStruct {
 			),*
 		}
 
-		impl Compare for $struct {
-			fn compare(&self, other: &Self) -> Option<SchemaDiff> {
+		impl<'a> Compare<'a> for $struct {
+			fn compare(&'a self, other: &'a Self) -> Option<SchemaDiff<'a>> {
 				let mut vec = vec![];
 
 				$(
 					if let Some(m) = self.$field.compare(&other.$field) {
-						vec.push((Some(stringify!($field).to_string()), m));
+						vec.push((Some(stringify!($field)), m));
 					}
 				)*
 
 				match vec.len() {
 					0 => None,
 					_ => Some(SchemaDiff::StructDiff(
-							stringify!($typname).to_string(),
-							self.$ident.clone(),
+							stringify!($typname),
+							&self.$ident,
 							vec,
 					))
 				}

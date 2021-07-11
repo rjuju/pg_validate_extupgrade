@@ -3,6 +3,7 @@
  * Copyright: Copyright (c) 2021 : Julien Rouhaud - All rights reserved
  *---------------------------------------------------------------------------*/
 use std::cmp::Ordering;
+use diffy::Patch;
 
 #[derive(Debug)]
 pub enum DiffSource {
@@ -11,14 +12,14 @@ pub enum DiffSource {
 }
 
 impl DiffSource {
-	fn str_self(&self) -> &'static str {
+	pub fn str_self(&self) -> &'static str {
 		match self {
 			DiffSource::Installed => { "installed" },
 			DiffSource::Upgraded => { "upgraded" },
 		}
 	}
 
-	fn str_other(&self) -> &'static str {
+	pub fn str_other(&self) -> &'static str {
 		match self {
 			DiffSource::Installed => { "upgraded" },
 			DiffSource::Upgraded => { "installed" },
@@ -27,22 +28,23 @@ impl DiffSource {
 }
 
 #[derive(Debug)]
-pub enum SchemaDiff {
+pub enum SchemaDiff<'a> {
 	// (installed, upgraded)
 	Diff(String, String),
 	// (what, installed, upgraded)
-	NamedDiff(String, String, String),
+	NamedDiff(&'a str, &'a str, &'a str),
 	// (installed len, upgraded len, diffs)
-	VecDiff(usize, usize, Vec<(usize, Box<SchemaDiff>)>),
+	VecDiff(usize, usize, Vec<(usize, Box<SchemaDiff<'a>>)>),
 	NoneDiff(DiffSource, String),
 	// (installed len, upgraded len, type name, missings, diffs)
 	HashMapDiff(usize, usize, &'static str,
-		Vec<(DiffSource, Vec<String>)>, Vec<SchemaDiff>),
+		Vec<(DiffSource, Vec<&'a str>)>, Vec<SchemaDiff<'a>>),
 	// (struct type, struct name, Vec<(Option<field>, detail)>)
-	StructDiff(String, String, Vec<(Option<String>, SchemaDiff)>),
+	StructDiff(&'a str, &'a str, Vec<(Option<&'a str>, SchemaDiff<'a>)>),
+	UnifiedDiff(Patch<'a, str>),
 }
 
-impl SchemaDiff {
+impl<'a> SchemaDiff<'a> {
 	fn indent(level: u8) -> String {
 		"  ".repeat(level as usize)
 	}
@@ -212,11 +214,21 @@ impl SchemaDiff {
 				}
 				res
 			},
+			SchemaDiff::UnifiedDiff(patch) => {
+			let mut diff = patch.to_string();
+			// XXX I didn't find any API to specify the filenames
+			diff.replace_range(.."--- original\n+++modified".len() + 1,
+					&format!("--- {}\n+++ {}",
+						DiffSource::Installed.str_self(),
+						DiffSource::Upgraded.str_self(),
+						));
+			format!("{}\n", diff)
+			},
 		}
 	}
 }
 
-impl ToString for SchemaDiff {
+impl<'a> ToString for SchemaDiff<'a> {
 	fn to_string(&self) -> String {
 		self.decode(0)
 	}
