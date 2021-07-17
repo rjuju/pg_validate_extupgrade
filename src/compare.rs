@@ -18,6 +18,15 @@ pub const PG_14: u32 = 140000;
 pub const PG_MIN: u32 = 0;
 pub const PG_MAX: u32 = u32::MAX;
 
+#[macro_export]
+macro_rules! proc_prototype {
+	($field:literal) => {
+		format!("{field}::regproc::text || '(' || \
+			pg_get_function_arguments({field}) || ')'",
+			field=$field)
+	}
+}
+
 pub trait Compare<'a> {
 	fn compare(&'a self, other: &'a Self) -> Option<SchemaDiff<'a>>;
 	fn typname() -> &'static str {

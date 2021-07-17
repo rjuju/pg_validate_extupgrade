@@ -7,18 +7,17 @@ use crate::{
 	elog::*,
 	pgdiff::SchemaDiff,
 	pgtype::*,
+	proc_prototype,
 };
 
 DbStruct! {
 	Routine:signature:Routine {
-		signature: Text = ("p.oid::regproc::text || '(' || \
-			pg_get_function_arguments(p.oid) || ')'"),
+		signature: Text = (proc_prototype!("p.oid")),
 		proowner: Name = ("r.rolname"),
 		prolang: Name = ("l.lanname"),
 		procost: Real,
 		prorows: Real,
-		prosupport: Option<Text> = ("prosupport::regproc::text || '(' || \
-			pg_get_function_arguments(p.oid) || ')'") {PG_12..},
+		prosupport: Option<Text> = (proc_prototype!("p.prosupport")) {PG_12..},
 		prokind: Char {PG_11..},
 		prosecdef: Bool,
 		proleakproof: Bool,
