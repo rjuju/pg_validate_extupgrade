@@ -76,3 +76,6 @@ CREATE TYPE shell_1;
 CREATE TYPE typ_composite AS (col1 integer, col2 text, col3 text collate "C");
 CREATE TYPE typ_enum AS ENUM('a', 'b');
 CREATE TYPE typ_range AS RANGE(SUBTYPE = int4);
+CREATE FUNCTION fcast_i_p(integer) returns point as $$;$$ language plpgsql;
+CREATE FUNCTION fcast_i_p1(integer) returns point as $$;$$ language plpgsql;
+CREATE CAST (integer AS point) WITH FUNCTION fcast_i_p(int) AS ASSIGNMENT;

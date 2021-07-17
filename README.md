@@ -289,7 +289,7 @@ ERROR: Differences found:
             + WHERE id != 0
 
   - in routines:
-    installed has 1 more Routine (14) than upgraded (13)
+    installed has 1 more Routine (16) than upgraded (15)
       4 Routine missing in installed:
         - public.ftrig2()
         - public.func_2(integer DEFAULT 1, OUT integer)
@@ -428,6 +428,17 @@ ERROR: Differences found:
             - in rngsubopc:
               - int2_ops
               + int4_ops
+
+  - in casts:
+    installed and upgraded both have 2 Cast but some mismatch in them:
+      - mismatch found for Cast integer -> point:
+        - in castfunc:
+          - public.fcast_i_p1(integer)
+          + public.fcast_i_p(integer)
+
+        - in castcontext:
+          - i
+          + a
 ```
 
 LICENSE

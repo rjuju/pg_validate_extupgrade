@@ -6,6 +6,9 @@ use std::collections::BTreeMap;
 
 use postgres::Transaction;
 
+mod pg_cast;
+use pg_cast::Cast;
+
 mod pg_class;
 use pg_class::Relation;
 
@@ -46,6 +49,7 @@ CompareStruct! {
 		event_triggers: Option<BTreeMap<String, EventTrigger>>,
 		operators: Option<BTreeMap<String, Operator>>,
 		types: Option<BTreeMap<String, Type>>,
+		casts: Option<BTreeMap<String, Cast>>,
 	}
 }
 
@@ -63,6 +67,7 @@ impl Extension {
 			event_triggers: None,
 			operators: None,
 			types: None,
+			casts: None,
 		};
 
 		client.execute("SET search_path TO pg_catalog", &[])
@@ -82,6 +87,10 @@ impl Extension {
 			let objids: Vec<u32> = dependency.get(1);
 
 			match classid {
+				"pg_cast" => {
+					ext.casts = Some(Cast::snapshot(client,
+							objids, pgver));
+				},
 				"pg_class" => {
 					ext.relations = Some(Relation::snapshot(client,
 							objids, pgver));
