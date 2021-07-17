@@ -2,7 +2,7 @@
  * Author: Julien Rouhaud
  * Copyright: Copyright (c) 2021 : Julien Rouhaud - All rights reserved
  *---------------------------------------------------------------------------*/
-use std::collections::HashMap;
+use std::collections::BTreeMap;
 use postgres::row::Row;
 use crate::pgdiff::{SchemaDiff, DiffSource};
 
@@ -129,8 +129,8 @@ impl<'a, T: Compare<'a>> Compare<'a> for Option<T> {
 	}
 }
 
-impl<'a, T: Compare<'a>> Compare<'a> for HashMap<String, T> {
-	fn compare(&'a self, other: &'a HashMap<String, T>) -> Option<SchemaDiff<'a>> {
+impl<'a, T: Compare<'a>> Compare<'a> for BTreeMap<String, T> {
+	fn compare(&'a self, other: &'a BTreeMap<String, T>) -> Option<SchemaDiff<'a>> {
 		let mut missings:Vec<(DiffSource, Vec<&str>)> = Vec::new();
 		let mut diffs = Vec::new();
 

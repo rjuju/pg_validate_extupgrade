@@ -1,4 +1,4 @@
-use std::collections::HashMap;
+use std::collections::BTreeMap;
 use postgres::{Row, Transaction};
 
 use crate::{
@@ -17,9 +17,9 @@ DbStruct! {
 
 impl Index {
 	pub fn snapshot(client: &mut Transaction, relid: u32, pgver: u32)
-		-> HashMap<String, Index>
+		-> BTreeMap<String, Index>
 	{
-		let mut indexes = HashMap::new();
+		let mut indexes = BTreeMap::new();
 
 		let sql = format!("SELECT {} \
 			FROM pg_index \

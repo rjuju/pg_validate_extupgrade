@@ -36,75 +36,29 @@ Connected, server version 140000
 ERROR: Differences found:
 - mismatch found for Extension pg_broken_extupgrade:
   - in relations:
-    installed and upgraded both have 14 Relation but some mismatch in them:
+    installed and upgraded both have 19 Relation but some mismatch in them:
       3 Relation missing in installed:
         - public.missing2
         - public.papart
         - public.tbl1
 
       3 Relation missing in upgraded:
-        - public.missing1
         - public.broken_tbl1
+        - public.missing1
         - public.tbl3_id_seq
 
-      - mismatch found for Relation public.options_1:
+      - mismatch found for Relation public.logged:
+        - in relpersistence:
+          - u
+          + p
+
+        - in relacl:
+          - upgraded has no value, while installed has
+            + {rjuju=arwdDxt/rjuju}
+
         - in reloptions:
-          installed has 1 more Option (3) than upgraded (2)
-            1 Option missing in installed:
-              - toast_tuple_target
-
-            2 Option missing in upgraded:
-              - parallel_workers
-              - autovacuum_enabled
-
-            - mismatch found for fillfactor:
-              - 90
-              + 80
-
-      - mismatch found for Relation public.options_2:
-        - in reloptions:
-          upgraded has 1 more Option (2) than installed (1)
-            1 Option missing in installed:
-              - fillfactor
-
-            - mismatch found for toast_tuple_target:
-              - 8000
-              + 8100
-
-      - mismatch found for Relation public.tbl4:
-        - in attributes:
-          - mismatch for elem #1:
-            - mismatch found for Attribute val:
-              - in atttype:
-                - character varying(30)
-                + character varying(20)
-
-      - mismatch found for Relation public.tbl0:
-        - in indexes:
-          installed and upgraded both have 1 Index but some mismatch in them:
-            - mismatch found for Index public.tbl0_id_idx:
-              - in inddef:
-                - CREATE INDEX tbl0_id_idx ON public.tbl0 USING btree (id) WHERE (id > 0)
-                + CREATE INDEX tbl0_id_idx ON public.tbl0 USING btree (id)
-
-        - in stats:
-          installed and upgraded both have 2 ExtendedStatistic but some mismatch in them:
-            - mismatch found for ExtendedStatistic public.tbl0_stats_n:
-              - in stxkind:
-                - mismatch for elem #0:
-                  - f
-                  + d
-
-            - mismatch found for ExtendedStatistic public.tbl0_stats:
-              - in columns:
-                - id, val, ((id * 2))
-                + id, val
-
-              - in stxkind:
-                - installed has 1 more elements (4) than upgraded (3)
-                - mismatch for elem #3:
-                  - upgraded has no value, while installed has
-                    + 101
+          - upgraded has no value, while installed has
+            + fillfactor=80
 
       - mismatch found for Relation public.main:
         - in attributes:
@@ -132,6 +86,83 @@ ERROR: Differences found:
           - true
           + false
 
+      - mismatch found for Relation public.main2:
+        - in constraints:
+          installed and upgraded both have 2 Constraint but some mismatch in them:
+            - mismatch found for Constraint public.main2_val_check:
+              - in condef:
+                - CHECK ((length(val) > 2))
+                + CHECK ((length(val) > 1))
+
+      - mismatch found for Relation public.options_1:
+        - in reloptions:
+          installed has 1 more Option (3) than upgraded (2)
+            1 Option missing in installed:
+              - toast_tuple_target
+
+            2 Option missing in upgraded:
+              - autovacuum_enabled
+              - parallel_workers
+
+            - mismatch found for fillfactor:
+              - 90
+              + 80
+
+      - mismatch found for Relation public.options_2:
+        - in reloptions:
+          upgraded has 1 more Option (2) than installed (1)
+            1 Option missing in installed:
+              - fillfactor
+
+            - mismatch found for toast_tuple_target:
+              - 8000
+              + 8100
+
+      - mismatch found for Relation public.ref:
+        - in constraints:
+          installed has 1 more Constraint (1) than upgraded (0)
+            1 Constraint missing in upgraded:
+              - public.ref_id_fkey
+
+        - in relhastriggers:
+          - true
+          + false
+
+      - mismatch found for Relation public.ref2:
+        - in constraints:
+          installed and upgraded both have 1 Constraint but some mismatch in them:
+            - mismatch found for Constraint public.ref2_id_fkey:
+              - in condef:
+                - FOREIGN KEY (id) REFERENCES public.main2(id) ON UPDATE CASCADE ON DELETE CASCADE
+                + FOREIGN KEY (id) REFERENCES public.main2(id) ON DELETE RESTRICT
+
+      - mismatch found for Relation public.tbl0:
+        - in indexes:
+          installed and upgraded both have 1 Index but some mismatch in them:
+            - mismatch found for Index public.tbl0_id_idx:
+              - in inddef:
+                - CREATE INDEX tbl0_id_idx ON public.tbl0 USING btree (id) WHERE (id > 0)
+                + CREATE INDEX tbl0_id_idx ON public.tbl0 USING btree (id)
+
+        - in stats:
+          installed and upgraded both have 2 ExtendedStatistic but some mismatch in them:
+            - mismatch found for ExtendedStatistic public.tbl0_stats:
+              - in columns:
+                - id, val, ((id * 2))
+                + id, val
+
+              - in stxkind:
+                - installed has 1 more elements (4) than upgraded (3)
+                - mismatch for elem #3:
+                  - upgraded has no value, while installed has
+                    + 101
+
+            - mismatch found for ExtendedStatistic public.tbl0_stats_n:
+              - in stxkind:
+                - mismatch for elem #0:
+                  - f
+                  + d
+
       - mismatch found for Relation public.tbl2:
         - in attributes:
           - mismatch for elem #0:
@@ -145,45 +176,6 @@ ERROR: Differences found:
               - in attcollation:
                 - upgraded has no value, while installed has
                   + C
-
-      - mismatch found for Relation public.ref2:
-        - in constraints:
-          installed and upgraded both have 1 Constraint but some mismatch in them:
-            - mismatch found for Constraint public.ref2_id_fkey:
-              - in condef:
-                - FOREIGN KEY (id) REFERENCES public.main2(id) ON UPDATE CASCADE ON DELETE CASCADE
-                + FOREIGN KEY (id) REFERENCES public.main2(id) ON DELETE RESTRICT
-
-      - mismatch found for Relation public.ref:
-        - in constraints:
-          installed has 1 more Constraint (1) than upgraded (0)
-            1 Constraint missing in upgraded:
-              - public.ref_id_fkey
-
-        - in relhastriggers:
-          - true
-          + false
-
-      - mismatch found for Relation public.logged:
-        - in relpersistence:
-          - u
-          + p
-
-        - in relacl:
-          - upgraded has no value, while installed has
-            + {rjuju=arwdDxt/rjuju}
-
-        - in reloptions:
-          - upgraded has no value, while installed has
-            + fillfactor=80
-
-      - mismatch found for Relation public.main2:
-        - in constraints:
-          installed and upgraded both have 2 Constraint but some mismatch in them:
-            - mismatch found for Constraint public.main2_val_check:
-              - in condef:
-                - CHECK ((length(val) > 2))
-                + CHECK ((length(val) > 1))
 
       - mismatch found for Relation public.tbl3:
         - in attributes:
@@ -215,6 +207,14 @@ ERROR: Differences found:
           - upgraded has no value, while installed has
             + LIST (id)
 
+      - mismatch found for Relation public.tbl4:
+        - in attributes:
+          - mismatch for elem #1:
+            - mismatch found for Attribute val:
+              - in atttype:
+                - character varying(30)
+                + character varying(20)
+
       - mismatch found for Relation public.tbl_rewrite:
         - in rules:
           installed and upgraded both have 3 Rule but some mismatch in them:
@@ -226,28 +226,26 @@ ERROR: Differences found:
 
             - mismatch found for Rule r1:
               - in inddef:
-                - CREATE RULE r1 AS
-    ON INSERT TO public.tbl_rewrite DO  DELETE FROM public.v1;
-                + CREATE RULE r1 AS
-    ON UPDATE TO public.tbl_rewrite DO  DELETE FROM public.v1;
+--- installed
++++ upgraded
+@@ -1,2 +1,2 @@
+ CREATE RULE r1 AS
+-    ON INSERT TO public.tbl_rewrite DO  DELETE FROM public.v1;
+\ No newline at end of file
++    ON UPDATE TO public.tbl_rewrite DO  DELETE FROM public.v1;
+\ No newline at end of file
 
             - mismatch found for Rule r2:
               - in inddef:
-                - CREATE RULE r2 AS
-    ON INSERT TO public.tbl_rewrite
-   WHERE (new.id = 0) DO NOTHING;
-                + CREATE RULE r2 AS
-    ON INSERT TO public.tbl_rewrite DO NOTHING;
-
-      - mismatch found for Relation public.v1:
-        - in rules:
-          installed and upgraded both have 1 Rule but some mismatch in them:
-            - mismatch found for Rule _RETURN:
-              - in inddef:
-                - CREATE RULE "_RETURN" AS
-    ON SELECT TO public.v1 DO INSTEAD  SELECT 2;
-                + CREATE RULE "_RETURN" AS
-    ON SELECT TO public.v1 DO INSTEAD  SELECT 1;
+--- installed
++++ upgraded
+@@ -1,3 +1,2 @@
+ CREATE RULE r2 AS
+-    ON INSERT TO public.tbl_rewrite
+-   WHERE (new.id = 0) DO NOTHING;
+\ No newline at end of file
++    ON INSERT TO public.tbl_rewrite DO NOTHING;
+\ No newline at end of file
 
       - mismatch found for Relation public.tbl_trig:
         - in triggers:
@@ -262,6 +260,20 @@ ERROR: Differences found:
                 - CREATE TRIGGER trig2 BEFORE INSERT ON public.tbl_trig FOR EACH ROW EXECUTE FUNCTION public.ftrig3()
                 + CREATE TRIGGER trig2 BEFORE INSERT ON public.tbl_trig FOR EACH ROW EXECUTE FUNCTION public.ftrig2()
 
+      - mismatch found for Relation public.v1:
+        - in rules:
+          installed and upgraded both have 1 Rule but some mismatch in them:
+            - mismatch found for Rule _RETURN:
+              - in inddef:
+--- installed
++++ upgraded
+@@ -1,2 +1,2 @@
+ CREATE RULE "_RETURN" AS
+-    ON SELECT TO public.v1 DO INSTEAD  SELECT 2;
+\ No newline at end of file
++    ON SELECT TO public.v1 DO INSTEAD  SELECT 1;
+\ No newline at end of file
+
   - in extension_config:
     - mismatch found for ExtConfig pg_broken_extupgrade:
       - in options:
@@ -275,14 +287,15 @@ ERROR: Differences found:
             + WHERE id != 0
 
   - in routines:
-    installed and upgraded both have 6 Routine but some mismatch in them:
+    installed has 1 more Routine (8) than upgraded (7)
       2 Routine missing in installed:
-        - public.func_2(integer DEFAULT 1, OUT integer)
         - public.ftrig2()
+        - public.func_2(integer DEFAULT 1, OUT integer)
 
-      2 Routine missing in upgraded:
-        - public.func_2(integer, integer)
+      3 Routine missing in upgraded:
+        - public.fct_evt_trigger_2()
         - public.ftrig3()
+        - public.func_2(integer, integer)
 
       - mismatch found for Routine public.func_1(integer):
         - in prolang:
@@ -297,11 +310,10 @@ ERROR: Differences found:
           - SETOF boolean
           + void
 
-
       - mismatch found for Routine public.func_3(integer):
         - in source:
 --- installed
---- upgraded
++++ upgraded
 @@ -1,7 +1,6 @@
 
      BEGIN
@@ -310,6 +322,7 @@ ERROR: Differences found:
          PERFORM pg_sleep(1);
          RAISE NOTICE 'some other message';
      END;
+
       - mismatch found for Routine public.func_4():
         - in prokind:
           - p
@@ -321,13 +334,14 @@ ERROR: Differences found:
 
         - in source:
 --- installed
---- upgraded
++++ upgraded
 @@ -1,4 +1,4 @@
  BEGIN ATOMIC
 - SELECT 2;
 + SELECT 1;
   SELECT false AS bool;
  END
+\ No newline at end of file
 ```
 
 LICENSE

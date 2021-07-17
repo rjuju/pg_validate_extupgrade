@@ -1,4 +1,4 @@
-use std::collections::HashMap;
+use std::collections::BTreeMap;
 use postgres::{Row, Transaction};
 
 use crate::{
@@ -41,9 +41,9 @@ DbStruct! {
 
 impl Routine {
 	pub fn snapshot<'a>(client: &mut Transaction, oids: Vec<u32>, pgver: u32)
-		-> HashMap<String, Routine>
+		-> BTreeMap<String, Routine>
 	{
-		let mut routines = HashMap::new();
+		let mut routines = BTreeMap::new();
 
 		for oid in oids {
 			let r = snap_one_routine(client, oid, pgver);

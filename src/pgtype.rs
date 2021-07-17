@@ -2,7 +2,7 @@
  * Author: Julien Rouhaud
  * Copyright: Copyright (c) 2021 : Julien Rouhaud - All rights reserved
  *---------------------------------------------------------------------------*/
-use std::collections::HashMap;
+use std::collections::BTreeMap;
 use diffy::create_patch;
 use postgres::types::{FromSql, Type};
 
@@ -45,7 +45,7 @@ impl<'a> Compare<'a> for Char {
 	}
 }
 
-// HashMap implements PartialEq + Display and requires a specific
+// BTreeMap implements PartialEq + Display and requires a specific
 // implementation, so we can't use generic implementation for simple postgres
 // type aliases.
 macro_rules! PgAlias {
@@ -107,11 +107,11 @@ impl<'a> Compare<'a> for String {
 // Used for text[] column storing sets of key=value
 #[derive(Debug)]
 pub struct ClassOptions {
-	options: HashMap<String, String>,
+	options: BTreeMap<String, String>,
 }
 
 impl ClassOptions {
-	pub fn from_options(options: HashMap<String, String>) -> Self {
+	pub fn from_options(options: BTreeMap<String, String>) -> Self {
 		ClassOptions { options }
 	}
 }
@@ -120,7 +120,7 @@ impl<'a> FromSql<'a> for ClassOptions {
 	fn from_sql(ty: &Type, raw:&'a [u8])
 		-> Result<ClassOptions, Box<dyn std::error::Error + Sync + Send>>
 	{
-		let mut options = HashMap::new();
+		let mut options = BTreeMap::new();
 		let vec = Vec::<String>::from_sql(ty, raw)?;
 
 		for e in vec.iter() {

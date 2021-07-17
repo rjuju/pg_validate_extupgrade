@@ -1,4 +1,4 @@
-use std::collections::HashMap;
+use std::collections::BTreeMap;
 use postgres::{Row, Transaction};
 
 use crate::{
@@ -18,9 +18,9 @@ DbStruct! {
 
 impl Trigger {
 	pub fn snapshot(client: &mut Transaction, relid: u32, pgver: u32)
-		-> HashMap<String, Trigger>
+		-> BTreeMap<String, Trigger>
 	{
-		let mut triggers = HashMap::new();
+		let mut triggers = BTreeMap::new();
 
 		let sql = format!("SELECT {} \
 			FROM pg_trigger \

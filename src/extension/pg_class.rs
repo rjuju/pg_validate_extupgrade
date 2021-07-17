@@ -2,7 +2,7 @@
  * Author: Julien Rouhaud
  * Copyright: Copyright (c) 2021 : Julien Rouhaud - All rights reserved
  *---------------------------------------------------------------------------*/
-use std::collections::HashMap;
+use std::collections::BTreeMap;
 use postgres::{Row, Transaction};
 
 use crate::{compare::*,
@@ -45,20 +45,20 @@ DbStruct! {
 CompareStruct! {
 	Relation {
 		attributes: Vec<Attribute>,
-		indexes: HashMap<String, Index>,
-		stats: Option<HashMap<String, ExtendedStatistic>>,
-		constraints: HashMap<String, Constraint>,
-		rules: HashMap<String, Rewrite>,
-		triggers: HashMap<String, Trigger>,
+		indexes: BTreeMap<String, Index>,
+		stats: Option<BTreeMap<String, ExtendedStatistic>>,
+		constraints: BTreeMap<String, Constraint>,
+		rules: BTreeMap<String, Rewrite>,
+		triggers: BTreeMap<String, Trigger>,
 		class: PgClass,
 	}
 }
 
 impl Relation {
 	pub fn snapshot<'a>(client: &mut Transaction, oids: Vec<u32>, pgver: u32)
-		-> HashMap<String, Relation>
+		-> BTreeMap<String, Relation>
 	{
-		let mut rels = HashMap::new();
+		let mut rels = BTreeMap::new();
 
 		for oid in oids {
 			match snap_one_class(client, oid, pgver) {

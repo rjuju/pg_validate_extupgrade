@@ -2,7 +2,7 @@
  * Author: Julien Rouhaud
  * Copyright: Copyright (c) 2021 : Julien Rouhaud - All rights reserved
  *---------------------------------------------------------------------------*/
-use std::collections::HashMap;
+use std::collections::BTreeMap;
 use postgres::{Row, Transaction};
 
 use crate::{
@@ -21,9 +21,9 @@ DbStruct! {
 
 impl Constraint {
 	pub fn snapshot_per_table(client: &mut Transaction, relid: u32, pgver: u32)
-		-> HashMap<String, Constraint>
+		-> BTreeMap<String, Constraint>
 	{
-		let mut cons = HashMap::new();
+		let mut cons = BTreeMap::new();
 
 		let sql = format!("SELECT {} \
 			FROM pg_constraint c \

@@ -1,4 +1,4 @@
-use std::collections::HashMap;
+use std::collections::BTreeMap;
 use postgres::{Row, Transaction};
 
 use crate::{
@@ -26,9 +26,9 @@ DbStruct! {
 
 impl ExtendedStatistic {
 	pub fn snapshot(client: &mut Transaction, relid: u32, pgver: u32)
-		-> HashMap<String, ExtendedStatistic>
+		-> BTreeMap<String, ExtendedStatistic>
 	{
-		let mut statistics = HashMap::new();
+		let mut statistics = BTreeMap::new();
 
 		assert!(pgver >= PG_MIN_VER);
 

@@ -285,7 +285,7 @@ impl ToString for Conninfo {
 
 #[cfg(test)]
 mod test {
-	use std::collections::HashMap;
+	use std::collections::BTreeMap;
 	use postgres::Row;
 	use super::{*, compare::*, pgdiff::*, pgtype::*};
 
@@ -314,7 +314,7 @@ mod test {
 
 	CompareStruct! {
 		Extension {
-			relations: Option<HashMap<String, Relation>>,
+			relations: Option<BTreeMap<String, Relation>>,
 		}
 	}
 
@@ -327,7 +327,7 @@ mod test {
 				relations: None,
 			},
 			Some(v) => {
-				let mut relations = HashMap::new();
+				let mut relations = BTreeMap::new();
 
 				for r in v {
 					relations.insert(r.class.relname.clone(), r);

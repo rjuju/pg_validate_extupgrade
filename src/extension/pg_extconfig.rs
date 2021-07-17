@@ -1,4 +1,4 @@
-use std::collections::HashMap;
+use std::collections::BTreeMap;
 use postgres::{Row, Transaction};
 
 use crate::{
@@ -28,7 +28,7 @@ impl ExtConfig {
 		let rows = client.query(&sql[..], &[&extname])
 			.expect("Could net get pg_extension rows");
 
-		let mut options: HashMap<String, String> = HashMap::new();
+		let mut options: BTreeMap<String, String> = BTreeMap::new();
 		for row in rows {
 			options.insert(row.try_get("config").unwrap(),
 			row.try_get("condition").unwrap());

@@ -2,7 +2,7 @@
  * Author: Julien Rouhaud
  * Copyright: Copyright (c) 2021 : Julien Rouhaud - All rights reserved
  *---------------------------------------------------------------------------*/
-use std::collections::HashMap;
+use std::collections::BTreeMap;
 
 use postgres::Transaction;
 
@@ -30,9 +30,9 @@ mod pg_statistic_ext;
 
 CompareStruct! {
 	Extension {
-		relations: Option<HashMap<String, Relation>>,
+		relations: Option<BTreeMap<String, Relation>>,
 		extension_config: ExtConfig,
-		routines: Option<HashMap<String, Routine>>,
+		routines: Option<BTreeMap<String, Routine>>,
 	}
 }
 

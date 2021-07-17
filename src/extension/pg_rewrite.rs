@@ -1,4 +1,4 @@
-use std::collections::HashMap;
+use std::collections::BTreeMap;
 use postgres::{Row, Transaction};
 
 use crate::{
@@ -18,9 +18,9 @@ DbStruct! {
 
 impl Rewrite {
 	pub fn snapshot(client: &mut Transaction, relid: u32, pgver: u32)
-		-> HashMap<String, Rewrite>
+		-> BTreeMap<String, Rewrite>
 	{
-		let mut rewrites = HashMap::new();
+		let mut rewrites = BTreeMap::new();
 
 		let sql = format!("SELECT {} \
 			FROM pg_rewrite \
