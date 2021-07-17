@@ -169,3 +169,35 @@ impl<'a> Compare<'a> for ClassOptions {
 			.join(",")
 	}
 }
+
+// Used for unordered array
+#[derive(Debug)]
+pub struct List {
+	values: BTreeMap<String, ()>,
+}
+
+impl<'a> FromSql<'a> for List {
+	fn from_sql(ty: &Type, raw:&'a [u8])
+		-> Result<List, Box<dyn std::error::Error + Sync + Send>>
+	{
+		let mut values = BTreeMap::new();
+		let vec = Vec::<String>::from_sql(ty, raw)?;
+
+		for e in vec.iter() {
+			values.insert(e.clone(), ());
+		}
+
+		Ok(List { values })
+	}
+
+	fn accepts(ty: &Type) -> bool {
+		Vec::<String>::accepts(ty)
+	}
+}
+
+impl<'a> Compare<'a> for List {
+	fn compare(&'a self, other: &'a Self) -> Option<SchemaDiff<'a>>
+	{
+		compare_map(&self.values, &other.values, "Value", None)
+	}
+}
