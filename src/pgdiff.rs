@@ -75,11 +75,11 @@ impl<'a> SchemaDiff<'a> {
 						res.push_str(&format!(
 								"{i}- {} has {} more elements ({}) than {} \
 									({})\n",
-								DiffSource::Installed.str_self(),
-								s2 - s1,
-								s1,
 								DiffSource::Upgraded.str_self(),
+								s2 - s1,
 								s2,
+								DiffSource::Installed.str_self(),
+								s1,
 								i = ind0,
 						));
 					},
@@ -96,11 +96,11 @@ impl<'a> SchemaDiff<'a> {
 						res.push_str(&format!(
 								"{i}- {} has {} more elements ({}) than {} \
 									({})\n",
-								DiffSource::Upgraded.str_self(),
-								s1 - s2,
-								s2,
 								DiffSource::Installed.str_self(),
+								s1 - s2,
 								s1,
+								DiffSource::Upgraded.str_self(),
+								s2,
 								i = ind0,
 						));
 					},
