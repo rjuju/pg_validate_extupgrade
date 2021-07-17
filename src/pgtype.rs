@@ -110,6 +110,12 @@ pub struct ClassOptions {
 	options: HashMap<String, String>,
 }
 
+impl ClassOptions {
+	pub fn from_options(options: HashMap<String, String>) -> Self {
+		ClassOptions { options }
+	}
+}
+
 impl<'a> FromSql<'a> for ClassOptions {
 	fn from_sql(ty: &Type, raw:&'a [u8])
 		-> Result<ClassOptions, Box<dyn std::error::Error + Sync + Send>>

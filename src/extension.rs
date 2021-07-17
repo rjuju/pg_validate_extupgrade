@@ -9,6 +9,9 @@ use postgres::Transaction;
 mod pg_class;
 use pg_class::Relation;
 
+mod pg_extconfig;
+use pg_extconfig::ExtConfig;
+
 mod pg_proc;
 use pg_proc::Routine;
 
@@ -28,6 +31,7 @@ mod pg_statistic_ext;
 CompareStruct! {
 	Extension {
 		relations: Option<HashMap<String, Relation>>,
+		extension_config: ExtConfig,
 		routines: Option<HashMap<String, Routine>>,
 	}
 }
@@ -36,9 +40,12 @@ impl Extension {
 	pub fn snapshot(extname: &str, client: &mut Transaction, pgver: u32)
 		-> Self
 	{
+		let extension_config = ExtConfig::snapshot(client, extname);
+
 		let mut ext = Extension {
 			ident: String::from(extname),
 			relations: None,
+			extension_config,
 			routines: None,
 		};
 

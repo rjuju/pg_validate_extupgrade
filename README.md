@@ -262,6 +262,18 @@ ERROR: Differences found:
                 - CREATE TRIGGER trig2 BEFORE INSERT ON public.tbl_trig FOR EACH ROW EXECUTE FUNCTION public.ftrig3()
                 + CREATE TRIGGER trig2 BEFORE INSERT ON public.tbl_trig FOR EACH ROW EXECUTE FUNCTION public.ftrig2()
 
+  - in extension_config:
+    - mismatch found for ExtConfig pg_broken_extupgrade:
+      - in options:
+        installed and upgraded both have 2 Option but some mismatch in them:
+          - mismatch found for dump_0:
+            - WHERE id != 0
+            +
+
+          - mismatch found for dump_1:
+            - WHERE id > 0
+            + WHERE id != 0
+
   - in routines:
     installed and upgraded both have 6 Routine but some mismatch in them:
       2 Routine missing in installed:

@@ -1,6 +1,10 @@
 -- complain if script is sourced in psql, rather than via CREATE EXTENSION
 \echo Use "CREATE EXTENSION pg_broken_extupgrade" to load this file. \quit
 
+CREATE TABLE dump_0(id integer);
+SELECT pg_extension_config_dump('dump_0', 'WHERE id != 0');
+CREATE TABLE dump_1(id integer);
+SELECT pg_extension_config_dump('dump_1', 'WHERE id > 0');
 CREATE TABLE tbl0(id integer, val text);
 CREATE STATISTICS tbl0_stats ON id, val, (id *2) FROM tbl0;
 CREATE STATISTICS tbl0_stats_n (dependencies) ON (id + 1), val FROM tbl0;
