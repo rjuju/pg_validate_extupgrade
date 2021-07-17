@@ -7,8 +7,8 @@ use diffy::create_patch;
 use postgres::types::{FromSql, Type};
 
 use crate::{
-	compare::{Compare},
-	pgdiff::{DiffSource, SchemaDiff},
+	compare::{Compare, compare_map},
+	pgdiff::SchemaDiff,
 };
 
 // Can't have those function as default implementation as it's not possible to
@@ -141,54 +141,25 @@ impl<'a> FromSql<'a> for ClassOptions {
 	}
 }
 
+fn class_options_cmp<'a>(ident: &'a str, self_option: &'a String,
+	other_option: &'a String,
+	diffs: &mut Vec<SchemaDiff<'a>>)
+{
+	if self_option != other_option {
+		diffs.push({
+			SchemaDiff::NamedDiff(ident,
+				&self_option[..],
+				&other_option[..],
+			)
+		});
+	}
+}
+
 impl<'a> Compare<'a> for ClassOptions {
-	fn compare(&'a self, other: &'a Self) -> Option<SchemaDiff<'a>> {
-		let mut missings:Vec<(DiffSource, Vec<&str>)> = Vec::new();
-		let mut diffs = Vec::new();
-
-		let mut missing_ins:Vec<&str> = vec![];
-		for ident in other.options.keys() {
-			if !self.options.contains_key(ident) {
-				missing_ins.push(&ident[..]);
-			}
-		}
-		if missing_ins.len() > 0 {
-			missings.push((DiffSource::Installed, missing_ins));
-		}
-
-		let mut missing_upg:Vec<&str> = vec![];
-		for ident in self.options.keys() {
-			match other.options.get(ident) {
-				None => {
-					missing_upg.push(&ident[..]);
-				},
-				Some(o) => {
-					if self.options.get(ident).unwrap() != o {
-						diffs.push({
-							SchemaDiff::NamedDiff(ident,
-								self.options.get(ident).unwrap(),
-								o,
-							)
-						})
-					}
-				}
-			}
-		}
-		if missing_upg.len() > 0 {
-			missings.push((DiffSource::Upgraded, missing_upg));
-		}
-
-		if missings.len() == 0 && diffs.len() == 0 {
-			None
-		} else {
-			Some(SchemaDiff::HashMapDiff(
-				self.options.len(),
-				other.options.len(),
-				"Option",
-				missings,
-				diffs,
-			))
-		}
+	fn compare(&'a self, other: &'a Self) -> Option<SchemaDiff<'a>>
+	{
+		compare_map(&self.options, &other.options, "Option",
+			Some(class_options_cmp))
 	}
 
 	fn value(&self) -> String {

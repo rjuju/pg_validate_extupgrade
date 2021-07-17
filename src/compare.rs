@@ -27,6 +27,56 @@ macro_rules! proc_prototype {
 	}
 }
 
+pub fn compare_map<'a, T>(self_map: &'a BTreeMap<String, T>,
+	other_map: &'a BTreeMap<String, T>, typname: &'static str,
+	fn_comp: Option<fn(&'a str, &'a T, &'a T, &mut Vec<SchemaDiff<'a>>)>
+)
+	-> Option<SchemaDiff<'a>>
+{
+		let mut missings:Vec<(DiffSource, Vec<&str>)> = Vec::new();
+		let mut diffs = Vec::new();
+
+		let mut missing_ins:Vec<&str> = vec![];
+		for ident in other_map.keys() {
+			if !self_map.contains_key(ident) {
+				missing_ins.push(&ident[..]);
+			}
+		}
+		if missing_ins.len() > 0 {
+			missings.push((DiffSource::Installed, missing_ins));
+		}
+
+		let mut missing_upg:Vec<&str> = vec![];
+		for ident in self_map.keys() {
+			match other_map.get(ident) {
+				None => {
+					missing_upg.push(&ident[..]);
+				},
+				Some(o) => {
+					if let Some(f) = fn_comp {
+						f(ident, self_map.get(ident).unwrap(), o,
+							&mut diffs);
+					}
+				}
+			}
+		}
+		if missing_upg.len() > 0 {
+			missings.push((DiffSource::Upgraded, missing_upg));
+		}
+
+		if missings.len() == 0 && diffs.len() == 0 {
+			None
+		} else {
+			Some(SchemaDiff::HashMapDiff(
+				self_map.len(),
+				other_map.len(),
+				typname,
+				missings,
+				diffs,
+			))
+		}
+}
+
 pub trait Compare<'a> {
 	fn compare(&'a self, other: &'a Self) -> Option<SchemaDiff<'a>>;
 	fn typname() -> &'static str {
@@ -138,52 +188,24 @@ impl<'a, T: Compare<'a>> Compare<'a> for Option<T> {
 	}
 }
 
+fn btmap_cmp<'a, T>(_: &'a str, self_option: &'a T,
+	other_option: &'a T,
+	diffs: &mut Vec<SchemaDiff<'a>>)
+	where T: Compare<'a>
+{
+	match self_option.compare(other_option) {
+		None => {},
+		Some(d) => {
+			diffs.push(d);
+		},
+	};
+}
+
 impl<'a, T: Compare<'a>> Compare<'a> for BTreeMap<String, T> {
-	fn compare(&'a self, other: &'a BTreeMap<String, T>) -> Option<SchemaDiff<'a>> {
-		let mut missings:Vec<(DiffSource, Vec<&str>)> = Vec::new();
-		let mut diffs = Vec::new();
-
-		let mut missing_ins:Vec<&str> = vec![];
-		for ident in other.keys() {
-			if !self.contains_key(ident) {
-				missing_ins.push(&ident[..]);
-			}
-		}
-		if missing_ins.len() > 0 {
-			missings.push((DiffSource::Installed, missing_ins));
-		}
-
-		let mut missing_upg:Vec<&str> = vec![];
-		for ident in self.keys() {
-			match other.get(ident) {
-				None => {
-					missing_upg.push(&ident[..]);
-				},
-				Some(o) => {
-					match self.get(ident).unwrap().compare(o) {
-						None => {},
-						Some(d) => {
-							diffs.push(d);
-						},
-					}
-				}
-			}
-		}
-		if missing_upg.len() > 0 {
-			missings.push((DiffSource::Upgraded, missing_upg));
-		}
-
-		if missings.len() == 0 && diffs.len() == 0 {
-			None
-		} else {
-			Some(SchemaDiff::HashMapDiff(
-				self.len(),
-				other.len(),
-				<T>::typname(),
-				missings,
-				diffs,
-			))
-		}
+	fn compare(&'a self, other: &'a BTreeMap<String, T>)
+		-> Option<SchemaDiff<'a>>
+	{
+		compare_map(&self, &other, <T>::typname(), Some(btmap_cmp))
 	}
 
 	fn typname() -> &'static str {
