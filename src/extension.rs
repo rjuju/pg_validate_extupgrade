@@ -15,6 +15,9 @@ use pg_event_trigger::EventTrigger;
 mod pg_extconfig;
 use pg_extconfig::ExtConfig;
 
+mod pg_operator;
+use pg_operator::Operator;
+
 mod pg_proc;
 use pg_proc::Routine;
 
@@ -37,6 +40,7 @@ CompareStruct! {
 		extension_config: ExtConfig,
 		routines: Option<BTreeMap<String, Routine>>,
 		event_triggers: Option<BTreeMap<String, EventTrigger>>,
+		operators: Option<BTreeMap<String, Operator>>,
 	}
 }
 
@@ -52,6 +56,7 @@ impl Extension {
 			extension_config,
 			routines: None,
 			event_triggers: None,
+			operators: None,
 		};
 
 		client.execute("SET search_path TO pg_catalog", &[])
@@ -75,14 +80,18 @@ impl Extension {
 					ext.relations = Some(Relation::snapshot(client,
 							objids, pgver));
 				},
-				"pg_proc" => {
-					ext.routines = Some(Routine::snapshot(client,
-							objids, pgver));
-				},
 				"pg_event_trigger" => {
 					assert!(pgver >= PG_9_3,
 						"Event triggers were introduced in PostgreSQL 9.3");
 					ext.event_triggers = Some(EventTrigger::snapshot(client,
+							objids, pgver));
+				},
+				"pg_operator" => {
+					ext.operators = Some(Operator::snapshot(client,
+							objids, pgver));
+				},
+				"pg_proc" => {
+					ext.routines = Some(Routine::snapshot(client,
 							objids, pgver));
 				},
 				_ => {

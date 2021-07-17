@@ -53,7 +53,7 @@ impl Routine {
 	}
 }
 
-pub fn snap_one_routine(client: &mut Transaction, relid: u32, pgver: u32)
+pub fn snap_one_routine(client: &mut Transaction, oid: u32, pgver: u32)
 	-> Routine
 {
 	let sql = format!("SELECT {} \
@@ -64,7 +64,7 @@ pub fn snap_one_routine(client: &mut Transaction, relid: u32, pgver: u32)
 		Routine::tlist(pgver).join(", "),
 	);
 
-	let row = match client.query_one(&sql[..], &[&relid]) {
+	let row = match client.query_one(&sql[..], &[&oid]) {
 		Ok(r) => { r },
 		Err(e) => { elog(ERROR, &format!("{}", e)); panic!(); },
 	};

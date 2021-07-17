@@ -38,7 +38,7 @@ CREATE FUNCTION ftrig3() RETURNS trigger AS $$ BEGIN END; $$ LANGUAGE plpgsql;
 CREATE TRIGGER trig2 BEFORE INSERT ON tbl_trig FOR EACH ROW EXECUTE FUNCTION ftrig3();
 CREATE FUNCTION func_1(integer) RETURNS setof bool AS $$ ; $$ language sql;
 CREATE FUNCTION func_2(integer, integer) RETURNS integer AS $$ ; $$ language plpgsql;
-CREATE FUNCTION func_3(integer) RETURNS void AS $$
+CREATE FUNCTION func_3(smallint) RETURNS void AS $$
     BEGIN
         RAISE NOTICE 'some message';
         -- some comment
@@ -46,6 +46,7 @@ CREATE FUNCTION func_3(integer) RETURNS void AS $$
         RAISE NOTICE 'some other message';
     END;
 $$ LANGUAGE plpgsql;
+CREATE FUNCTION func_3b(smallint) RETURNS void AS $$;$$ language plpgsql;
 CREATE PROCEDURE func_4()
 BEGIN ATOMIC
     SELECT 2;
@@ -73,3 +74,12 @@ CREATE EVENT TRIGGER evt_trigger_2
     ON ddl_command_start
     WHEN tag IN ('DROP EXTENSION')
     EXECUTE PROCEDURE fct_evt_trigger_2() ;
+CREATE OPERATOR >< (
+    PROCEDURE = func_2,
+    leftarg = int4,
+    rightarg = int4
+);
+CREATE OPERATOR >< (
+    PROCEDURE = func_3b,
+    rightarg = int2
+);

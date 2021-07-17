@@ -287,7 +287,7 @@ ERROR: Differences found:
             + WHERE id != 0
 
   - in routines:
-    installed has 1 more Routine (8) than upgraded (7)
+    installed has 1 more Routine (9) than upgraded (8)
       2 Routine missing in installed:
         - public.ftrig2()
         - public.func_2(integer DEFAULT 1, OUT integer)
@@ -310,7 +310,7 @@ ERROR: Differences found:
           - SETOF boolean
           + void
 
-      - mismatch found for Routine public.func_3(integer):
+      - mismatch found for Routine public.func_3(smallint):
         - in source:
 --- installed
 +++ upgraded
@@ -359,6 +359,19 @@ ERROR: Differences found:
         - in evtfoid:
           - public.fct_evt_trigger_2()
           + public.fct_evt_trigger_1()
+
+  - in operators:
+    installed and upgraded both have 2 Operator but some mismatch in them:
+      1 Operator missing in installed:
+        - public.><(-,integer)
+
+      1 Operator missing in upgraded:
+        - public.><(integer,integer)
+
+      - mismatch found for Operator public.><(-,smallint):
+        - in oprcode:
+          - public.func_3b(smallint)
+          + public.func_3(smallint)
 ```
 
 LICENSE
