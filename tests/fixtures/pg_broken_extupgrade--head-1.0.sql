@@ -48,3 +48,18 @@ BEGIN ATOMIC
     SELECT 1;
     SELECT false;
 END;
+CREATE OR REPLACE FUNCTION fct_evt_trigger_1()
+RETURNS event_trigger
+LANGUAGE plpgsql
+AS $_$
+DECLARE
+BEGIN
+END; $_$;
+CREATE EVENT TRIGGER evt_trigger_1
+    ON ddl_command_end
+    WHEN tag IN ('CREATE EXTENSION', 'CREATE TABLE')
+    EXECUTE PROCEDURE fct_evt_trigger_1() ;
+CREATE EVENT TRIGGER evt_trigger_2
+    ON ddl_command_end
+    WHEN tag IN ('DROP EXTENSION')
+    EXECUTE PROCEDURE fct_evt_trigger_1() ;

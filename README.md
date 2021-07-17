@@ -342,6 +342,23 @@ ERROR: Differences found:
   SELECT false AS bool;
  END
 \ No newline at end of file
+
+  - in event_triggers:
+    installed and upgraded both have 2 EventTrigger but some mismatch in them:
+      - mismatch found for EventTrigger evt_trigger_1:
+        - in evttags:
+          upgraded has 1 more Value (2) than installed (1)
+            1 Value missing in installed:
+              - CREATE EXTENSION
+
+      - mismatch found for EventTrigger evt_trigger_2:
+        - in evtevent:
+          - ddl_command_start
+          + ddl_command_end
+
+        - in evtfoid:
+          - public.fct_evt_trigger_2()
+          + public.fct_evt_trigger_1()
 ```
 
 LICENSE

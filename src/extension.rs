@@ -9,6 +9,9 @@ use postgres::Transaction;
 mod pg_class;
 use pg_class::Relation;
 
+mod pg_event_trigger;
+use pg_event_trigger::EventTrigger;
+
 mod pg_extconfig;
 use pg_extconfig::ExtConfig;
 
@@ -16,7 +19,7 @@ mod pg_proc;
 use pg_proc::Routine;
 
 use crate::{
-	compare::Compare,
+	compare::*,
 	CompareStruct,
 	pgdiff::SchemaDiff,
 };
@@ -33,6 +36,7 @@ CompareStruct! {
 		relations: Option<BTreeMap<String, Relation>>,
 		extension_config: ExtConfig,
 		routines: Option<BTreeMap<String, Routine>>,
+		event_triggers: Option<BTreeMap<String, EventTrigger>>,
 	}
 }
 
@@ -47,6 +51,7 @@ impl Extension {
 			relations: None,
 			extension_config,
 			routines: None,
+			event_triggers: None,
 		};
 
 		client.execute("SET search_path TO pg_catalog", &[])
@@ -74,9 +79,15 @@ impl Extension {
 					ext.routines = Some(Routine::snapshot(client,
 							objids, pgver));
 				},
+				"pg_event_trigger" => {
+					assert!(pgver >= PG_9_3,
+						"Event triggers were introduced in PostgreSQL 9.3");
+					ext.event_triggers = Some(EventTrigger::snapshot(client,
+							objids, pgver));
+				},
 				_ => {
 					println!("Classid \"{}\" not handled", classid);
-				}
+				},
 			}
 		}
 
