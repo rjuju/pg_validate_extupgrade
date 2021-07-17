@@ -3,11 +3,16 @@ name = "pg_validate_extupgrade"
 version = "0.1.0"
 authors = ["Julien Rouhaud <julien.rouhaud@free.fr>"]
 edition = "2018"
+description = "A tool to validate PostgreSQL extension upgrade scripts"
+readme = "README.md"
+license = "GPL-3.0-only"
+keywords = ["postgres", "postgresql", "extension"]
+categories = ["command-line-utilities"]
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
 clap = "2.*"
-postgres = "*"
-whoami = "*"
+postgres = "0.19"
+whoami = "1.1"
 diffy = "0.2"
