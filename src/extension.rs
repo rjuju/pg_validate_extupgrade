@@ -21,6 +21,9 @@ use pg_operator::Operator;
 mod pg_proc;
 use pg_proc::Routine;
 
+mod pg_type;
+use pg_type::Type;
+
 use crate::{
 	compare::*,
 	CompareStruct,
@@ -30,6 +33,7 @@ use crate::{
 mod pg_attribute;
 mod pg_constraint;
 mod pg_index;
+mod pg_range;
 mod pg_rewrite;
 mod pg_trigger;
 mod pg_statistic_ext;
@@ -41,6 +45,7 @@ CompareStruct! {
 		routines: Option<BTreeMap<String, Routine>>,
 		event_triggers: Option<BTreeMap<String, EventTrigger>>,
 		operators: Option<BTreeMap<String, Operator>>,
+		types: Option<BTreeMap<String, Type>>,
 	}
 }
 
@@ -57,6 +62,7 @@ impl Extension {
 			routines: None,
 			event_triggers: None,
 			operators: None,
+			types: None,
 		};
 
 		client.execute("SET search_path TO pg_catalog", &[])
@@ -92,6 +98,10 @@ impl Extension {
 				},
 				"pg_proc" => {
 					ext.routines = Some(Routine::snapshot(client,
+							objids, pgver));
+				},
+				"pg_type" => {
+					ext.types = Some(Type::snapshot(client,
 							objids, pgver));
 				},
 				_ => {

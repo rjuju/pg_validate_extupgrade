@@ -33,6 +33,8 @@ Example
 ```
 $ pg_validate_extupgrade -e pg_broken_extupgrade --from head-1.0 --to head-1.1
 Connected, server version 140000
+WARNING: Shell type found for type public.shell_1
+WARNING: Shell type found for type public.shell_1
 ERROR: Differences found:
 - mismatch found for Extension pg_broken_extupgrade:
   - in relations:
@@ -287,15 +289,19 @@ ERROR: Differences found:
             + WHERE id != 0
 
   - in routines:
-    installed has 1 more Routine (9) than upgraded (8)
-      2 Routine missing in installed:
+    installed has 1 more Routine (14) than upgraded (13)
+      4 Routine missing in installed:
         - public.ftrig2()
         - public.func_2(integer DEFAULT 1, OUT integer)
+        - public.typ_range(integer, integer)
+        - public.typ_range(integer, integer, text)
 
-      3 Routine missing in upgraded:
+      5 Routine missing in upgraded:
         - public.fct_evt_trigger_2()
         - public.ftrig3()
         - public.func_2(integer, integer)
+        - public.typ_range(smallint, smallint)
+        - public.typ_range(smallint, smallint, text)
 
       - mismatch found for Routine public.func_1(integer):
         - in prolang:
@@ -372,6 +378,56 @@ ERROR: Differences found:
         - in oprcode:
           - public.func_3b(smallint)
           + public.func_3(smallint)
+
+  - in types:
+    installed and upgraded both have 5 Type but some mismatch in them:
+      - mismatch found for Type public.typ_composite:
+        - in relation:
+          - mismatch found for Relation public.typ_composite:
+            - in attributes:
+              - mismatch for elem #0:
+                - mismatch found for Attribute col1:
+                  - in atttype:
+                    - text
+                    + integer
+
+                  - in attstorage:
+                    - x
+                    + p
+
+              - mismatch for elem #1:
+                - mismatch found for Attribute col2:
+                  - in attcollation:
+                    - upgraded has no value, while installed has
+                      + C
+
+              - mismatch for elem #2:
+                - mismatch found for Attribute col4:
+                  - in attname:
+                    - col4
+                    + col3
+
+                  - in attcollation:
+                    - POSIX
+                    + C
+
+      - mismatch found for Type public.typ_enum:
+        - in typenum:
+          - installed has 1 more elements (3) than upgraded (2)
+          - mismatch for elem #2:
+            - upgraded has no value, while installed has
+              + c=3
+
+      - mismatch found for Type public.typ_range:
+        - in range:
+          - mismatch found for Range public.typ_range:
+            - in rngsubtype:
+              - smallint
+              + integer
+
+            - in rngsubopc:
+              - int2_ops
+              + int4_ops
 ```
 
 LICENSE

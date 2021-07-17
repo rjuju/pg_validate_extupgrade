@@ -83,3 +83,7 @@ CREATE OPERATOR >< (
     PROCEDURE = func_3b,
     rightarg = int2
 );
+CREATE TYPE shell_1;
+CREATE TYPE typ_composite AS (col1 text, col2 text collate "C", col4 text collate "POSIX");
+CREATE TYPE typ_enum AS ENUM('a', 'b', 'c');
+CREATE TYPE typ_range AS RANGE(SUBTYPE = int2);
