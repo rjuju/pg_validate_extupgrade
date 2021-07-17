@@ -50,6 +50,13 @@ ERROR: Differences found:
         - public.tbl3_id_seq
 
       - mismatch found for Relation public.logged:
+        - in attributes:
+          - mismatch for elem #0:
+            - mismatch found for Attribute id:
+              - in comment:
+                - ID column
+                + id column
+
         - in relpersistence:
           - u
           + p
@@ -61,6 +68,10 @@ ERROR: Differences found:
         - in reloptions:
           - upgraded has no value, while installed has
             + fillfactor=80
+
+        - in comment:
+          - I'm not logged
+          + I'm logged
 
       - mismatch found for Relation public.main:
         - in attributes:
@@ -91,6 +102,11 @@ ERROR: Differences found:
       - mismatch found for Relation public.main2:
         - in constraints:
           installed and upgraded both have 2 Constraint but some mismatch in them:
+            - mismatch found for Constraint public.main2_pkey:
+              - in comment:
+                - more than 2
+                + more than 1
+
             - mismatch found for Constraint public.main2_val_check:
               - in condef:
                 - CHECK ((length(val) > 2))
@@ -146,6 +162,10 @@ ERROR: Differences found:
                 - CREATE INDEX tbl0_id_idx ON public.tbl0 USING btree (id) WHERE (id > 0)
                 + CREATE INDEX tbl0_id_idx ON public.tbl0 USING btree (id)
 
+              - in comment:
+                - index with qual
+                + index without qual
+
         - in stats:
           installed and upgraded both have 2 ExtendedStatistic but some mismatch in them:
             - mismatch found for ExtendedStatistic public.tbl0_stats:
@@ -158,6 +178,10 @@ ERROR: Differences found:
                 - mismatch for elem #3:
                   - upgraded has no value, while installed has
                     + 101
+
+              - in comment:
+                - statistics with qual
+                + statistics without qual
 
             - mismatch found for ExtendedStatistic public.tbl0_stats_n:
               - in stxkind:
@@ -249,6 +273,10 @@ ERROR: Differences found:
 +    ON INSERT TO public.tbl_rewrite DO NOTHING;
 \ No newline at end of file
 
+              - in comment:
+                - with qual
+                + no qual
+
       - mismatch found for Relation public.tbl_trig:
         - in triggers:
           installed and upgraded both have 2 Trigger but some mismatch in them:
@@ -275,6 +303,10 @@ ERROR: Differences found:
 \ No newline at end of file
 +    ON SELECT TO public.v1 DO INSTEAD  SELECT 1;
 \ No newline at end of file
+
+        - in comment:
+          - two
+          + one
 
   - in extension_config:
     - mismatch found for ExtConfig pg_broken_extupgrade:
@@ -316,6 +348,10 @@ ERROR: Differences found:
           - SETOF boolean
           + void
 
+        - in comment:
+          - sql
+          + plpgsql
+
       - mismatch found for Routine public.func_3(smallint):
         - in source:
 --- installed
@@ -356,6 +392,10 @@ ERROR: Differences found:
           upgraded has 1 more Value (2) than installed (1)
             1 Value missing in installed:
               - CREATE EXTENSION
+
+        - in comment:
+          - table only
+          + ext and table
 
       - mismatch found for EventTrigger evt_trigger_2:
         - in evtevent:

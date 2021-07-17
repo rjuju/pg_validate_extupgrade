@@ -21,6 +21,7 @@ DbStruct! {
 				a.attnum = u.attnum AND NOT a.attisdropped))") {..PG_13},
 		stxkind: Vec<Char>,
 		stxstattarget: Integer {PG_13..},
+		comment: Option<Text> = ("obj_description(s.oid, 'pg_statistic_ext')"),
 	}
 }
 

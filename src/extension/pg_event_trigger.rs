@@ -18,6 +18,7 @@ DbStruct! {
 		evtfoid: Text = (proc_prototype!("evtfoid")),
 		evtenabled: Char,
 		evttags: Option<List>,
+		comment: Option<Text> = ("obj_description(t.oid, 'pg_event_trigger')"),
 	}
 }
 

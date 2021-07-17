@@ -13,6 +13,7 @@ DbStruct! {
 		rulename: Name,
 		ev_enabled: Char,
 		inddef: Text = ("pg_get_ruledef(oid)"),
+		comment: Option<Text> = ("obj_description(oid, 'pg_rewrite')"),
 	}
 }
 

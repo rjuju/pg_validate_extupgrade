@@ -30,6 +30,7 @@ DbStruct! {
 		attacl: Option<Text> = ("attacl::text"),
 		attoptions: Option<ClassOptions>,
 		attfdwoptions: Option<ClassOptions>,
+		comment: Option<Text> = ("col_description(a.attrelid, a.attnum)"),
 	}
 }
 

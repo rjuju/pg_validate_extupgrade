@@ -35,6 +35,7 @@ DbStruct! {
 			END, prosrc)", PG_14)),
 		proconfig: Option<ClassOptions>,
 		proacl: Option<Text> = ("proacl::text"),
+		comment: Option<Text> = ("obj_description(p.oid, 'pg_proc')"),
 	}
 }
 

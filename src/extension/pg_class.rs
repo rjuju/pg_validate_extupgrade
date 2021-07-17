@@ -39,6 +39,7 @@ DbStruct! {
 		relacl: Option<Text> = ("relacl::text"),
 		reloptions: Option<ClassOptions>,
 		relpartbound: Text = ("pg_get_expr(c.relpartbound, c.oid)") {PG_10..},
+		comment: Option<Text> = ("obj_description(c.oid, 'pg_class')"),
 	}
 }
 

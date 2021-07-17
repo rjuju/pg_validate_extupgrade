@@ -16,6 +16,7 @@ DbStruct! {
 	Constraint:conname:Constraint {
 		conname: Name = ("nspname || '.' || conname"),
 		condef: Text = ("pg_get_constraintdef(c.oid)"),
+		comment: Option<Text> = ("obj_description(c.oid, 'pg_constraint')"),
 	}
 }
 

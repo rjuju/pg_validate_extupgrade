@@ -12,6 +12,7 @@ DbStruct! {
 	Index:indname:Index {
 		indname: Name = ("indexrelid::regclass::text"),
 		inddef: Text = ("pg_get_indexdef(indexrelid)"),
+		comment: Option<Text> = ("obj_description(indexrelid, 'pg_class')"),
 	}
 }
 
