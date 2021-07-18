@@ -81,6 +81,7 @@ CREATE OPERATOR >< (
     PROCEDURE = func_3,
     rightarg = int2
 );
+COMMENT ON OPERATOR >< (none, smallint) IS 'func_3';
 CREATE TYPE shell_1;
 CREATE TYPE typ_composite AS (col1 integer, col2 text, col3 text collate "C");
 CREATE TYPE typ_enum AS ENUM('a', 'b');
@@ -88,5 +89,7 @@ CREATE TYPE typ_range AS RANGE(SUBTYPE = int4);
 CREATE FUNCTION fcast_i_p(integer) returns point as $$;$$ language plpgsql;
 CREATE FUNCTION fcast_i_p1(integer) returns point as $$;$$ language plpgsql;
 CREATE CAST (integer AS point) WITH FUNCTION fcast_i_p(int) AS ASSIGNMENT;
+COMMENT ON CAST (integer AS point) IS 'assignment';
 CREATE AGGREGATE agg_1 (int) (sfunc = int4smaller, stype = int4);
+COMMENT ON AGGREGATE agg_1(int) IS 'smaller';
 CREATE POLICY popol0 ON tbl0 AS PERMISSIVE FOR ALL TO public USING (id > 0);

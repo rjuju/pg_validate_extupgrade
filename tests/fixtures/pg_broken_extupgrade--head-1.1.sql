@@ -92,6 +92,7 @@ CREATE OPERATOR >< (
     PROCEDURE = func_3b,
     rightarg = int2
 );
+COMMENT ON OPERATOR >< (none, smallint) IS 'func_3b';
 CREATE TYPE shell_1;
 CREATE TYPE typ_composite AS (col1 text, col2 text collate "C", col4 text collate "POSIX");
 CREATE TYPE typ_enum AS ENUM('a', 'b', 'c');
@@ -99,5 +100,7 @@ CREATE TYPE typ_range AS RANGE(SUBTYPE = int2);
 CREATE FUNCTION fcast_i_p(integer) returns point as $$;$$ language plpgsql;
 CREATE FUNCTION fcast_i_p1(integer) returns point as $$;$$ language plpgsql;
 CREATE CAST (integer AS point) WITH FUNCTION fcast_i_p1(int) AS IMPLICIT;
+COMMENT ON CAST (integer AS point) IS 'implicit';
 CREATE AGGREGATE agg_1 (integer) (sfunc = int4larger, stype = int4);
+COMMENT ON AGGREGATE agg_1(int) IS 'larger';
 CREATE POLICY popol0 ON tbl0 AS RESTRICTIVE FOR SELECT TO current_user USING (id = 0);

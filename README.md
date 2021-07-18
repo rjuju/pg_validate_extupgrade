@@ -362,6 +362,10 @@ ERROR: Differences found:
         - public.typ_range(smallint, smallint, text)
 
       - mismatch found for Routine public.agg_1(integer):
+        - in comment:
+          - larger
+          + smaller
+
         - in aggregate:
           - mismatch found for Aggregate public.agg_1(integer):
             - in aggtransfn:
@@ -452,6 +456,10 @@ ERROR: Differences found:
           - public.func_3b(smallint)
           + public.func_3(smallint)
 
+        - in comment:
+          - func_3b
+          + func_3
+
   - in types:
     installed and upgraded both have 5 Type but some mismatch in them:
       - mismatch found for Type public.typ_composite:
@@ -512,6 +520,10 @@ ERROR: Differences found:
         - in castcontext:
           - i
           + a
+
+        - in comment:
+          - implicit
+          + assignment
 ```
 
 LICENSE

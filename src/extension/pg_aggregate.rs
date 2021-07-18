@@ -38,6 +38,7 @@ DbStruct! {
 		aggmtransspace: Integer {PG_9_4..},
 		agginitval: Option<Text>,
 		aggminitval: Option<Text> {PG_9_4..},
+		comment: Option<Text> = ("obj_description(a.aggfnoid, 'pg_aggregate')"),
 	}
 }
 

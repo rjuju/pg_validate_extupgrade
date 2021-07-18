@@ -34,6 +34,7 @@ DbStruct! {
 		oprcode: Option<Text> = (proc_prototype!("o.oprcode")),
 		oprrest: Option<Text> = (proc_prototype!("o.oprrest")),
 		oprjoin: Option<Text> = (proc_prototype!("o.oprjoin")),
+		comment: Option<Text> = ("obj_description(o.oid, 'pg_operator')"),
 	}
 }
 
