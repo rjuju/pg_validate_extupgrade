@@ -1,6 +1,6 @@
 [package]
 name = "pg_validate_extupgrade"
-version = "0.1.0"
+version = "1.0.0-beta"
 authors = ["Julien Rouhaud <julien.rouhaud@free.fr>"]
 edition = "2018"
 description = "A tool to validate PostgreSQL extension upgrade scripts"
