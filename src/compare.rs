@@ -19,11 +19,22 @@ pub const PG_MIN: u32 = 0;
 pub const PG_MAX: u32 = u32::MAX;
 
 #[macro_export]
+macro_rules! opr_prototype {
+	($alias:literal) => {
+		format!("{alias}.oid::regoper::text || \
+			'(' || {alias}.oprleft::regtype::text \
+			|| ',' || \
+			{alias}.oprright::regtype::text || ')'",
+			alias=$alias);
+	}
+}
+
+#[macro_export]
 macro_rules! proc_prototype {
 	($field:literal) => {
 		format!("{field}::regproc::text || '(' || \
 			pg_get_function_arguments({field}) || ')'",
-			field=$field)
+			field=$field);
 	}
 }
 

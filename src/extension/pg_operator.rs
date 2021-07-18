@@ -11,15 +11,13 @@ use crate::{
 	elog::*,
 	pgdiff::SchemaDiff,
 	pgtype::*,
+	opr_prototype,
 	proc_prototype,
 };
 
 DbStruct! {
 	Operator:oprname:Operator {
-		oprname: Name = ("o.oid::regoper::text || \
-			'(' || oprleft::regtype::text \
-			|| ',' || \
-			oprright::regtype::text || ')'"),
+		oprname: Name = (opr_prototype!("o")),
 		oprowner: Name = ("r.rolname"),
 		oprkind: Char,
 		oprcanmerge: Bool,
