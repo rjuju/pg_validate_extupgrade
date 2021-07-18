@@ -192,6 +192,29 @@ ERROR: Differences found:
                   - f
                   + d
 
+        - in policies:
+          installed and upgraded both have 1 Policy but some mismatch in them:
+            - mismatch found for Policy popol0:
+              - in polcmd:
+                - r
+                + *
+
+              - in polpermissive:
+                - false
+                + true
+
+              - in polroles:
+                installed and upgraded both have 1 Value but some mismatch in them:
+                  1 Value missing in installed:
+                    - public
+
+                  1 Value missing in upgraded:
+                    - rjuju
+
+              - in polqual:
+                - (id = 0)
+                + (id > 0)
+
       - mismatch found for Relation public.tbl2:
         - in attributes:
           - mismatch for elem #0:

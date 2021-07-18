@@ -31,6 +31,7 @@ mod pg_aggregate;
 mod pg_attribute;
 mod pg_constraint;
 mod pg_index;
+mod pg_policy;
 mod pg_range;
 mod pg_rewrite;
 mod pg_trigger;

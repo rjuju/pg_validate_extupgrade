@@ -100,3 +100,4 @@ CREATE FUNCTION fcast_i_p(integer) returns point as $$;$$ language plpgsql;
 CREATE FUNCTION fcast_i_p1(integer) returns point as $$;$$ language plpgsql;
 CREATE CAST (integer AS point) WITH FUNCTION fcast_i_p1(int) AS IMPLICIT;
 CREATE AGGREGATE agg_1 (integer) (sfunc = int4larger, stype = int4);
+CREATE POLICY popol0 ON tbl0 AS RESTRICTIVE FOR SELECT TO current_user USING (id = 0);

@@ -10,6 +10,7 @@ use crate::{compare::*,
 	extension::pg_attribute::Attribute,
 	extension::pg_constraint::Constraint,
 	extension::pg_index::Index,
+	extension::pg_policy::Policy,
 	extension::pg_rewrite::Rewrite,
 	extension::pg_trigger::Trigger,
 	extension::pg_statistic_ext::{ExtendedStatistic,
@@ -51,6 +52,7 @@ CompareStruct! {
 		constraints: BTreeMap<String, Constraint>,
 		rules: BTreeMap<String, Rewrite>,
 		triggers: BTreeMap<String, Trigger>,
+		policies: BTreeMap<String, Policy>,
 		class: PgClass,
 	}
 }
@@ -107,6 +109,7 @@ fn snap_one_class(client: &mut Transaction, oid: u32, pgver: u32)
 	let constraints = Constraint::snapshot_per_table(client, oid, pgver);
 	let rules = Rewrite::snapshot(client, oid, pgver);
 	let triggers = Trigger::snapshot(client, oid, pgver);
+	let policies = Policy::snapshot(client, oid, pgver);
 
 	Some(
 		Relation {
@@ -118,6 +121,7 @@ fn snap_one_class(client: &mut Transaction, oid: u32, pgver: u32)
 			rules,
 			triggers,
 			class,
+			policies,
 		}
 	)
 }
