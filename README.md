@@ -251,7 +251,7 @@ ERROR: Differences found:
               - r4
 
             - mismatch found for Rule r1:
-              - in inddef:
+              - in ruledef:
 --- installed
 +++ upgraded
 @@ -1,2 +1,2 @@
@@ -262,7 +262,7 @@ ERROR: Differences found:
 \ No newline at end of file
 
             - mismatch found for Rule r2:
-              - in inddef:
+              - in ruledef:
 --- installed
 +++ upgraded
 @@ -1,3 +1,2 @@
@@ -294,7 +294,7 @@ ERROR: Differences found:
         - in rules:
           installed and upgraded both have 1 Rule but some mismatch in them:
             - mismatch found for Rule _RETURN:
-              - in inddef:
+              - in ruledef:
 --- installed
 +++ upgraded
 @@ -1,2 +1,2 @@

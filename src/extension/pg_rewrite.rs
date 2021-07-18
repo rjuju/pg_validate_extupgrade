@@ -12,7 +12,7 @@ DbStruct! {
 	Rewrite:rulename:Rule {
 		rulename: Name,
 		ev_enabled: Char,
-		inddef: Text = ("pg_get_ruledef(oid)"),
+		ruledef: Text = ("pg_get_ruledef(oid)"),
 		comment: Option<Text> = ("obj_description(oid, 'pg_rewrite')"),
 	}
 }
@@ -33,8 +33,8 @@ impl Rewrite {
 			.expect("Could net get pg_rewrite rows");
 
 		for row in &rows {
-			let ind = Rewrite::from_row(row);
-			rewrites.insert(ind.rulename.clone(), ind);
+			let rewrite = Rewrite::from_row(row);
+			rewrites.insert(rewrite.rulename.clone(), rewrite);
 		};
 
 		rewrites
