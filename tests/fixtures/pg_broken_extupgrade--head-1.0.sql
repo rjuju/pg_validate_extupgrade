@@ -88,3 +88,4 @@ CREATE TYPE typ_range AS RANGE(SUBTYPE = int4);
 CREATE FUNCTION fcast_i_p(integer) returns point as $$;$$ language plpgsql;
 CREATE FUNCTION fcast_i_p1(integer) returns point as $$;$$ language plpgsql;
 CREATE CAST (integer AS point) WITH FUNCTION fcast_i_p(int) AS ASSIGNMENT;
+CREATE AGGREGATE agg_1 (int) (sfunc = int4smaller, stype = int4);

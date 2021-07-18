@@ -8,22 +8,16 @@ use postgres::Transaction;
 
 mod pg_cast;
 use pg_cast::Cast;
-
 mod pg_class;
 use pg_class::Relation;
-
 mod pg_event_trigger;
 use pg_event_trigger::EventTrigger;
-
 mod pg_extconfig;
 use pg_extconfig::ExtConfig;
-
 mod pg_operator;
 use pg_operator::Operator;
-
 mod pg_proc;
 use pg_proc::Routine;
-
 mod pg_type;
 use pg_type::Type;
 
@@ -33,6 +27,7 @@ use crate::{
 	pgdiff::SchemaDiff,
 };
 
+mod pg_aggregate;
 mod pg_attribute;
 mod pg_constraint;
 mod pg_index;

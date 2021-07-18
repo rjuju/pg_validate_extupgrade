@@ -30,6 +30,9 @@ official client.
 Example
 -------
 
+Here is the output of the tool when used with the `pg_broken_extupgrade`
+extension provided in the test/ directory:
+
 ```
 $ pg_validate_extupgrade -e pg_broken_extupgrade --from head-1.0 --to head-1.1
 Connected, server version 140000
@@ -321,7 +324,7 @@ ERROR: Differences found:
             + WHERE id != 0
 
   - in routines:
-    installed has 1 more Routine (16) than upgraded (15)
+    installed has 1 more Routine (17) than upgraded (16)
       4 Routine missing in installed:
         - public.ftrig2()
         - public.func_2(integer DEFAULT 1, OUT integer)
@@ -334,6 +337,13 @@ ERROR: Differences found:
         - public.func_2(integer, integer)
         - public.typ_range(smallint, smallint)
         - public.typ_range(smallint, smallint, text)
+
+      - mismatch found for Routine public.agg_1(integer):
+        - in aggregate:
+          - mismatch found for Aggregate public.agg_1(integer):
+            - in aggtransfn:
+              - int4larger(integer, integer)
+              + int4smaller(integer, integer)
 
       - mismatch found for Routine public.func_1(integer):
         - in prolang:
