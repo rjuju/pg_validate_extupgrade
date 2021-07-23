@@ -28,7 +28,7 @@ DbStruct! {
 		typisdefined: Bool,
 		typdelim: Char,
 		typrelid: Text = ("t.typrelid::regclass::text"),
-		typsubscript: Option<Text> = (proc_prototype!("t.typsubscript")),
+		typsubscript: Text = (proc_prototype!("t.typsubscript")) {PG_14..},
 		typelem: Text = ("t.typelem::regtype::text"),
 		typarray: Text = ("t.typarray::regtype::text"),
 		typinput: Text = (proc_prototype!("t.typinput")),

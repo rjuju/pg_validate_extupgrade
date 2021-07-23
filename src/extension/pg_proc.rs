@@ -18,7 +18,7 @@ DbStruct! {
 		prolang: Name = ("l.lanname"),
 		procost: Real,
 		prorows: Real,
-		prosupport: Option<Text> = (proc_prototype!("p.prosupport")) {PG_12..},
+		prosupport: Text = (proc_prototype!("p.prosupport")) {PG_12..},
 		prokind: Char {PG_11..},
 		prosecdef: Bool,
 		proleakproof: Bool,
@@ -26,14 +26,8 @@ DbStruct! {
 		provolatile: Char,
 		proparallel: Char {PG_9_6..},
 		prorettype: Option<Text> = ("pg_get_function_result(p.oid)"),
-		// prosrc and prosqlbody will have different representation, so a
-		// single field will be able to differentiale similar code written with
-		// different syntax
-		source: Text = (format!("coalesce( \
-			CASE WHEN current_setting('server_version_num')::int > {} \
-				THEN pg_get_function_sqlbody(p.oid) \
-				ELSE NULL \
-			END, prosrc)", PG_14)),
+		prosrc: Text,
+		prosqlbody: Text = ("pg_get_function_sqlbody(p.oid)") {PG_14..},
 		proconfig: Option<ClassOptions>,
 		proacl: Option<Text> = ("proacl::text"),
 		comment: Option<Text> = ("obj_description(p.oid, 'pg_proc')"),

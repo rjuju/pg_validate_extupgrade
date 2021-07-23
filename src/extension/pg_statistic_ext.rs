@@ -14,11 +14,11 @@ DbStruct! {
 	ExtendedStatistic:stxname:ExtendedStatistic {
 		stxname: Text = ("s.stxnamespace::regnamespace || '.' || s.stxname"),
 		stxowner: Name = ("r.rolname"),
-		columns: Text = ("pg_get_statisticsobjdef_columns(s.oid)") {PG_13..},
-		stxkeys: Text = ("(SELECT string_agg(attname, ', ') \
+		columns: Text = ("pg_get_statisticsobjdef_columns(s.oid)") {PG_14..},
+		stxkeys: List = ("(SELECT array_agg(attname) \
 			FROM unnest(s.stxkeys) u(attnum) \
 			JOIN pg_attribute a ON (s.stxrelid = a.attrelid AND \
-				a.attnum = u.attnum AND NOT a.attisdropped))") {..PG_13},
+				a.attnum = u.attnum AND NOT a.attisdropped))") {..PG_14},
 		stxkind: Vec<Char>,
 		stxstattarget: Integer {PG_13..},
 		comment: Option<Text> = ("obj_description(s.oid, 'pg_statistic_ext')"),

@@ -17,7 +17,7 @@ DbStruct! {
 	Range:rngtypid:Range {
 		rngtypid: Text = ("r.rngtypid::regtype::text"),
 		rngsubtype: Text = ("r.rngsubtype::regtype::text"),
-		rngmultitypid: Text = ("r.rngmultitypid::regtype::text"),
+		rngmultitypid: Text = ("r.rngmultitypid::regtype::text") {PG_14..},
 		rngcollation: Option<Name> = ("c.collname"),
 		rngsubopc: Name = ("opc.opcname"),
 		rngcanonical: Option<Text> = (proc_prototype!("r.rngcanonical")),
