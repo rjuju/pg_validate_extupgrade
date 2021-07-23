@@ -53,7 +53,7 @@ impl App {
 	pub fn new() -> Self {
 		let _host = match env::var("PGHOST") {
 			Ok(h) => h,
-			Err(_) => String::from("27.0.0.1"),
+			Err(_) => String::from("127.0.0.1"),
 		};
 
 		let _port = match env::var("PGPORT") {
