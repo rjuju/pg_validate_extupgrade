@@ -365,6 +365,10 @@ macro_rules! DbStruct {
 						let mut typname = stringify!($type).to_lowercase();
 						if typname == "char" {
 							typname = String::from("\"char\"");
+						} else if typname == "list"
+							|| typname == "classoptions"
+						{
+							typname = String::from("text[]");
 						}
 						tlist.push(format!(
 								"NULL::{} AS {}",
