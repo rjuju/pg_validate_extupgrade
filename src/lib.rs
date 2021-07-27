@@ -53,7 +53,7 @@ impl App {
 	pub fn new() -> Self {
 		let _host = match env::var("PGHOST") {
 			Ok(h) => h,
-			Err(_) => String::from("127.0.0.1"),
+			Err(_) => String::from("localhost"),
 		};
 
 		let _port = match env::var("PGPORT") {
@@ -72,6 +72,9 @@ impl App {
 		};
 
 		let matches = clap::App::new("pg_validate_extupgrade")
+			.author("Julien Rouhaud <rjuju123 (at) gmail (dot) com")
+			.about("Tool to validate PostgreSQL extension upgrade scripts.")
+			.max_term_width(100)
 			.arg(Arg::with_name("extname")
 				.short("e")
 				.long("extname")
