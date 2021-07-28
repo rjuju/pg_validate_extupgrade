@@ -32,10 +32,24 @@ Compilation
 
 You need the Rust toolchain, including `cargo` and `rustc`.
 
-I recommend using your distribution packages, for instance on Debian/Ubuntu:
+I recommend using your distribution packages, for instance:
+
+- on Debian/Ubuntu:
 
 ```
 sudo apt install cargo
+```
+
+- on RHEL 7:
+
+```
+sudo yum install rust-toolset-1.31
+```
+
+- on RHEL 8:
+
+```
+sudo yum module install rust-toolset
 ```
 
 If your distribution doesn't provide the required packages, you can look at
