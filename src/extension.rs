@@ -25,6 +25,7 @@ use crate::{
 	compare::*,
 	CompareStruct,
 	pgdiff::SchemaDiff,
+	pgtype::ExecutedQueries,
 };
 
 mod pg_aggregate;
@@ -46,6 +47,7 @@ CompareStruct! {
 		operators: Option<BTreeMap<String, Operator>>,
 		types: Option<BTreeMap<String, Type>>,
 		casts: Option<BTreeMap<String, Cast>>,
+		extra_queries: ExecutedQueries,
 	}
 }
 
@@ -64,6 +66,7 @@ impl Extension {
 			operators: None,
 			types: None,
 			casts: None,
+			extra_queries: ExecutedQueries::new(),
 		};
 
 		client.execute("SET search_path TO pg_catalog", &[])
@@ -118,7 +121,10 @@ impl Extension {
 		client.execute("RESET search_path", &[])
 			.expect("Could not reset the search_path");
 
-		//println!("{:#?}", ext);
 		ext
+	}
+
+	pub fn set_extra_queries(&mut self, extra_queries: ExecutedQueries) {
+		self.extra_queries = extra_queries;
 	}
 }

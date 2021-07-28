@@ -79,7 +79,8 @@ Here is the output of the tool when used with the `pg_broken_extupgrade`
 extension provided in the test/ directory:
 
 ```
-$ pg_validate_extupgrade -e pg_broken_extupgrade --from head-1.0 --to head-1.1
+$ pg_validate_extupgrade -c pg_broken_extupgrade.toml
+WARNING: Unexpected TOML key "wrong_key"
 Connected, server version 140000
 WARNING: Shell type found for type public.shell_1
 WARNING: Shell type found for type public.shell_1
@@ -442,7 +443,7 @@ ERROR: Differences found:
           + plpgsql
 
       - mismatch found for Routine public.func_3(smallint):
-        - in source:
+        - in prosrc:
 --- installed
 +++ upgraded
 @@ -1,7 +1,6 @@
@@ -463,7 +464,7 @@ ERROR: Differences found:
           - installed has no value, while upgraded has
             + boolean
 
-        - in source:
+        - in prosqlbody:
 --- installed
 +++ upgraded
 @@ -1,4 +1,4 @@
@@ -576,6 +577,48 @@ ERROR: Differences found:
         - in comment:
           - implicit
           + assignment
+
+  - in extra_queries:
+    installed and upgraded both have 3 Resultset but some mismatch in them:
+SELECT 1 / (random() * 2)::int AS may_fail
+-- 1 rows
+++ 0 rows
+
+--- installed
++++ upgraded
+@@ -1,2 +1,2 @@
+-may_fail: 1
+-
++Could not execute query:
++db error: ERROR: division by zero
+
+SELECT 1, (random() * 1000)::int AS val FROM generate_series(1, (random() * 5)::int)
+-- 3 rows
+++ 2 rows
+
+--- installed
++++ upgraded
+@@ -1,9 +1,6 @@
+ ?column?: 1
+-val: 627
+-
+-?column?: 1
+-val: 527
++val: 628
+
+ ?column?: 1
+-val: 323
++val: 662
+
+SELECT name, version, installed, CASE installed WHEN true THEN random() ELSE NULL END AS rand FROM pg_available_extension_versions  WHERE name = 'pg_broken_extupgrade'
+--- installed
++++ upgraded
+@@ -26,5 +26,5 @@
+ name: pg_broken_extupgrade
+ version: head-1.1
+ installed: true
+-rand: 0.41066309010476587
++rand: 0.850806603619418
 ```
 
 LICENSE

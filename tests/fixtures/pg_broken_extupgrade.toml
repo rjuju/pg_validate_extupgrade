@@ -1,4 +1,9 @@
 extname = 'pg_broken_extupgrade'
-toto = 'meh'
+wrong_key = 'meh'
 from = 'head-1.0'
 to = 'head-1.1'
+extra_queries = [
+    "SELECT 1 / (random() * 2)::int AS may_fail",
+    "SELECT 1, (random() * 1000)::int AS val FROM generate_series(1, (random() * 5)::int)",
+    "SELECT name, version, installed, CASE installed WHEN true THEN random() ELSE NULL END AS rand FROM pg_available_extension_versions  WHERE name = 'pg_broken_extupgrade'"
+]

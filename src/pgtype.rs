@@ -90,7 +90,7 @@ impl<'a> Compare<'a> for String {
 			// There's a mismatch if diffy returns at least one chunk
 			match patch.hunks().len() {
 				0 => { None },
-				_ => { Some(SchemaDiff::UnifiedDiff(patch)) },
+				_ => { Some(SchemaDiff::UnifiedDiff(None, patch)) },
 			}
 		}
 		else {
@@ -199,5 +199,46 @@ impl<'a> Compare<'a> for List {
 	fn compare(&'a self, other: &'a Self) -> Option<SchemaDiff<'a>>
 	{
 		compare_map(&self.values, &other.values, "Value", None)
+	}
+}
+
+#[derive(Debug)]
+pub struct ExecutedQueries {
+	queries: BTreeMap<String, (usize, String)>,
+}
+
+impl ExecutedQueries {
+	pub fn new() -> Self {
+		ExecutedQueries { queries: BTreeMap::new() }
+	}
+
+	pub fn new_from(queries: BTreeMap<String, (usize, String)>) -> Self {
+		ExecutedQueries { queries }
+	}
+}
+fn query_cmp<'a>(query: &'a str, self_option: &'a (usize, String),
+	other_option: &'a (usize, String),
+	diffs: &mut Vec<SchemaDiff<'a>>)
+{
+	let patch = create_patch(&self_option.1, &other_option.1);
+
+	match patch.hunks().len() {
+		0 => { },
+		_ => {
+			let mut source = String::from(query);
+			if self_option.0 != other_option.0 {
+				source.push_str(&format!("\n-- {} rows\n++ {} rows\n",
+						self_option.0, other_option.0));
+			}
+			diffs.push(SchemaDiff::UnifiedDiff(Some(source), patch));
+		},
+	}
+}
+
+impl<'a> Compare<'a> for ExecutedQueries {
+	fn compare(&'a self, other: &'a Self) -> Option<SchemaDiff<'a>>
+	{
+		compare_map(&self.queries, &other.queries, "Resultset",
+			Some(query_cmp))
 	}
 }
