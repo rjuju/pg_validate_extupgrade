@@ -1,0 +1,4 @@
+extname = 'pg_broken_extupgrade'
+toto = 'meh'
+from = 'head-1.0'
+to = 'head-1.1'

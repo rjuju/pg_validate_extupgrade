@@ -4,6 +4,9 @@
  *---------------------------------------------------------------------------*/
 use std::{
 	env,
+	ffi::OsStr,
+	fs,
+	path::Path,
 	process,
 };
 
@@ -14,6 +17,8 @@ use clap::{
 };
 
 use postgres::{Client, NoTls};
+use serde::Deserialize;
+use toml::Value;
 
 mod extension;
 use crate::extension::Extension;
@@ -42,11 +47,197 @@ pub mod elog {
 	}
 }
 
+#[derive(Deserialize)]
+struct Config {
+	extname: Option<String>,
+	from: Option<String>,
+	to: Option<String>,
+	host: Option<String>,
+	port: Option<u16>,
+	user: Option<String>,
+	dbname: Option<String>,
+}
+
+impl<'a> Config {
+	fn new() -> Self {
+		Config {
+			extname: None,
+			from: None,
+			to: None,
+			host: None,
+			port: None,
+			user: None,
+			dbname: None,
+		}
+	}
+
+	fn apply_matches(&mut self, matches: &clap::ArgMatches) {
+		if self.extname.is_none() || matches.occurrences_of("extname") != 0 {
+			self.extname = match matches.value_of("extname") {
+				Some(e) => Some(String::from(e)),
+				None => {
+					clap::Error::with_description(
+							"--extname is required",
+							ErrorKind::MissingRequiredArgument).exit();
+				},
+			};
+		}
+
+		if self.from.is_none() || matches.occurrences_of("from") != 0 {
+			self.from = match matches.value_of("from") {
+				Some(e) => Some(String::from(e)),
+				None => {
+					clap::Error::with_description(
+							"--from is required",
+							ErrorKind::MissingRequiredArgument).exit();
+				},
+			};
+		}
+
+		if self.to.is_none() || matches.occurrences_of("to") != 0 {
+			self.to = match matches.value_of("to") {
+				Some(e) => Some(String::from(e)),
+				None => {
+					clap::Error::with_description(
+							"--to is required",
+							ErrorKind::MissingRequiredArgument).exit();
+				},
+			};
+		}
+
+		if self.host.is_none() || matches.occurrences_of("host") != 0 {
+			self.host = Some(
+				String::from(matches.value_of("host").unwrap())
+			);
+		}
+
+		if self.port.is_none() || matches.occurrences_of("port") != 0 {
+			let port = matches.value_of("port").unwrap();
+			let port = match port.parse::<u16>() {
+				Ok(p) => p,
+				Err(_) => {
+					clap::Error::with_description(
+						&format!("Invalid port value \"{}\"", port),
+						ErrorKind::InvalidValue).exit();
+				},
+			};
+
+			self.port = Some(port);
+		}
+
+		if self.user.is_none() || matches.occurrences_of("user") != 0 {
+			self.user = Some(
+				String::from(matches.value_of("user").unwrap())
+			);
+		}
+
+		if self.dbname.is_none() || matches.occurrences_of("dbname") != 0 {
+			self.dbname = Some(
+				String::from(matches.value_of("dbname").unwrap())
+			);
+		}
+	}
+
+	fn check_config_keys<I>(keys: I, format: &str)
+		where I: Iterator<Item = &'a String>
+	{
+		for k in keys {
+			match &k[..] {
+				"extname" | "from" | "to" | "host" | "port" | "user" |
+					"dbname" => {
+				},
+				_ => {
+					elog::elog(elog::WARNING,
+						&format!("Unexpected {} key \"{}\"", format, k));
+				}
+			}
+		}
+	}
+
+	fn from_toml(lines: &str, filename: &str) -> Result<Self, String> {
+		let config: Config = match toml::from_str(lines) {
+			Ok(c) => { c },
+			Err(e) => { return Err(format!("Could not parse \"{}\":\n{}",
+					filename, e)); },
+		};
+
+		// Do an explicit parse of the input to warn about unexpected keys
+		let toml = lines.parse::<Value>().unwrap();
+		match toml {
+			Value::Table(m) => {
+				Config::check_config_keys(m.keys(), "TOML");
+			},
+			_ => {
+				return Err(format!("Unexpected TOML Value:\n {:#?}", toml));
+			},
+		};
+
+		Ok(config)
+	}
+
+	fn from_json(lines: &str, filename: &str) -> Result<Self, String> {
+		let config: Config = match serde_json::from_str(lines) {
+			Ok(c) => { c },
+			Err(e) => { return Err(format!("Could not parse \"{}\":\n{}",
+					filename, e)); },
+		};
+
+		// Do an explicit parse of the input to warn about unexpected keys
+		let json: serde_json::Value = serde_json::from_str(lines).unwrap();
+		match json {
+			serde_json::Value::Object(m) => {
+				Config::check_config_keys(m.keys(), "JSON");
+			},
+			_ => {
+				return Err(format!("Unexpected JSON Value:\n {:#?}", json));
+			}
+		}
+
+		Ok(config)
+	}
+
+	fn from_file(filename: &str) -> Result<Self, String> {
+		let content = match fs::read_to_string(filename) {
+			Ok(c) => { c },
+			Err(e) => {
+				return Err(format!("Could not read \"{}\": {}",
+						filename, e));
+			}
+		};
+
+		let file_ext = Path::new(filename).extension().and_then(OsStr::to_str);
+		let config = match file_ext {
+			Some(e) => {
+				match e {
+					"toml" => {
+						Config::from_toml(&content, filename)
+					},
+					"json" => {
+						Config::from_json(&content, filename)
+					},
+					_ => {
+						return Err(format!("Unsupported extension: {}", e));
+					},
+				}
+			},
+			None => {
+				return Err(format!("No extension found for file \"{}\"",
+						filename));
+			},
+		};
+
+		config
+	}
+}
+
 pub struct App {
-	conninfo: Conninfo,
 	extname: String,
 	from: String,
-	to: String
+	to: String,
+	host: String,
+	port: u16,
+	user: String,
+	dbname: String,
 }
 
 impl App {
@@ -79,19 +270,16 @@ impl App {
 				.short("e")
 				.long("extname")
 				.takes_value(true)
-				.required(true)
 				.help("extension to test")
 			)
 			.arg(Arg::with_name("from")
 				.long("from")
 				.takes_value(true)
-				.required(true)
 				.help("initial version of the extension")
 			)
 			.arg(Arg::with_name("to")
 				.long("to")
 				.takes_value(true)
-				.required(true)
 				.help("upgraded version of the extension")
 			)
 			.arg(Arg::with_name("host")
@@ -118,28 +306,54 @@ impl App {
 				.default_value(&_db)
 				.help("database name")
 			)
+			.arg(Arg::with_name("filename")
+				.short("c")
+				.long("config")
+				.takes_value(true)
+				.help("configuration file name.  Supported extension: \
+				.toml and .json")
+			)
 			.get_matches_from_safe(std::env::args_os())
 			.unwrap_or_else(|e| e.exit());
 
-		let conninfo = Conninfo::new_from(&matches).unwrap_or_else(|e| e.exit());
+		let mut config = match matches.value_of("filename") {
+			Some(f) => Config::from_file(f).unwrap_or_else(|e| {
+				clap::Error::with_description(&e,
+					ErrorKind::Io).exit();
+			}),
+			None => Config::new(),
+		};
 
-		let from = matches.value_of("from").unwrap();
-		let to = matches.value_of("to").unwrap();
+		config.apply_matches(&matches);
 
-		if from == to {
-			App::error(String::from("--from and --to must be different"));
+		if config.from == config.to {
+			clap::Error::with_description(
+				"--from and --to must be different",
+				ErrorKind::InvalidValue).exit();
 		}
 
 		App {
-			conninfo,
-			extname: String::from(matches.value_of("extname").unwrap()),
-			from: String::from(from),
-			to: String::from(to),
+			extname: config.extname.unwrap(),
+			from: config.from.unwrap(),
+			to: config.to.unwrap(),
+			host: config.host.unwrap(),
+			port: config.port.unwrap(),
+			user: config.user.unwrap(),
+			dbname: config.dbname.unwrap(),
 		}
 	}
 
+	fn conninfo(&self) -> String {
+		format!("host={} port={} user={} dbname={}",
+			self.host,
+			self.port,
+			self.user,
+			self.dbname)
+	}
+
 	fn connect(&self) -> Result<(Client, u32), postgres::Error> {
-		let mut client = Client::connect(&self.conninfo.to_string(), NoTls)?;
+		let conninfo = self.conninfo();
+		let mut client = Client::connect(&conninfo, NoTls)?;
 
 		let rows = client.query("SHOW server_version_num", &[])?;
 		let ver: &str = rows[0].get(0);
@@ -172,7 +386,7 @@ impl App {
 		for row in &rows {
 			let ver: &str = row.get(0);
 
-			if ver == self.from  {
+			if ver == self.from {
 				found_from = true;
 			} else if ver == self.to {
 				found_to = true;
@@ -243,46 +457,6 @@ impl App {
 			None => Ok(()),
 			Some(m) => Err(m.to_string()),
 		}
-	}
-}
-
-struct Conninfo {
-	host: String,
-	port: u16,
-	user: String,
-	dbname: String,
-}
-
-impl Conninfo {
-	fn new_from(matches: &clap::ArgMatches) -> Result<Self, clap::Error> {
-		let port = matches.value_of("port").unwrap();
-
-		let port = match port.parse::<u16>() {
-			Ok(p) => p,
-			Err(_) => {
-				return Err(clap::Error::with_description(
-						&format!("Invalid port value \"{}\"", port),
-						ErrorKind::InvalidValue));
-			},
-		};
-
-		Ok(Conninfo {
-			host: String::from(matches.value_of("host").unwrap()),
-			port: port,
-			user: String::from(matches.value_of("user").unwrap()),
-			dbname: String::from(matches.value_of("dbname").unwrap()),
-		})
-	}
-}
-
-impl ToString for Conninfo {
-	fn to_string(&self) -> String {
-		format!("host={} port={} user={} dbname={}",
-			self.host,
-			self.port,
-			self.user,
-			self.dbname,
-		)
 	}
 }
 

@@ -17,6 +17,7 @@ FLAGS:
 OPTIONS:
     -d, --dbname <dbname>      database name
     -e, --extname <extname>    extension to test
+    -c, --config <filename>    configuration file name.  Supported extension: .toml and .json
         --from <from>          initial version of the extension
     -h, --host <host>          database server host or socket directory
     -p, --port <port>          database server port
