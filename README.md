@@ -27,6 +27,36 @@ OPTIONS:
 Note that the connection parameters default follow the same rules as PostgreSQL
 official client.
 
+Compilation
+-----------
+
+You need the Rust toolchain, including `cargo` and `rustc`.
+
+I recommend using your distribution packages, for instance on Debian/Ubuntu:
+
+```
+sudo apt install cargo
+```
+
+If your distribution doesn't provide the required packages, you can look at
+https://www.rust-lang.org/tools/install for an alternative way to get the
+toolchain.
+
+Once you're good, you simply need to compile the binary:
+
+```
+$ cd /path/to/pg_validate_extupgrade
+$ cargo build --release
+   Compiling pg_validate_extupgrade v1.0.0-beta (/home/rjuju/git/pg_validate_extupgrade)
+    Finished release [optimized] target(s) in 19.09s
+```
+
+The binary will be available in `./target/release/pg_validate_extupgrade`.
+
+You can refer to the [Cargo
+documentation](https://doc.rust-lang.org/cargo/commands/cargo-build.html) for
+more information about the `cargo build` command.
+
 Example
 -------
 
