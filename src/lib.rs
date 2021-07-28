@@ -3,6 +3,7 @@
  * Copyright: Copyright (c) 2021 : Julien Rouhaud - All rights reserved
  *---------------------------------------------------------------------------*/
 use std::{
+	collections::BTreeMap,
 	env,
 	ffi::OsStr,
 	fs,
@@ -29,6 +30,7 @@ use crate::compare::Compare;
 
 mod pgdiff;
 mod pgtype;
+use pgtype::ExecutedQueries;
 
 pub mod elog {
 	pub const WARNING: u8 = 19;
@@ -56,6 +58,7 @@ struct Config {
 	port: Option<u16>,
 	user: Option<String>,
 	dbname: Option<String>,
+	extra_queries: Option<Vec<String>>,
 }
 
 impl<'a> Config {
@@ -68,6 +71,7 @@ impl<'a> Config {
 			port: None,
 			user: None,
 			dbname: None,
+			extra_queries: None,
 		}
 	}
 
@@ -144,7 +148,7 @@ impl<'a> Config {
 		for k in keys {
 			match &k[..] {
 				"extname" | "from" | "to" | "host" | "port" | "user" |
-					"dbname" => {
+					"dbname" | "extra_queries" => {
 				},
 				_ => {
 					elog::elog(elog::WARNING,
@@ -238,6 +242,7 @@ pub struct App {
 	port: u16,
 	user: String,
 	dbname: String,
+	extra_queries: Vec<String>,
 }
 
 impl App {
@@ -324,6 +329,10 @@ impl App {
 			None => Config::new(),
 		};
 
+		if config.extra_queries.is_none() {
+			config.extra_queries = Some(vec![]);
+		}
+
 		config.apply_matches(&matches);
 
 		if config.from == config.to {
@@ -340,6 +349,7 @@ impl App {
 			port: config.port.unwrap(),
 			user: config.user.unwrap(),
 			dbname: config.dbname.unwrap(),
+			extra_queries: config.extra_queries.unwrap(),
 		}
 	}
 
@@ -432,6 +442,39 @@ impl App {
 			};
 	}
 
+	fn run_extra_queries(&self, client: &mut postgres::Transaction)
+	-> ExecutedQueries
+	{
+		let mut result = BTreeMap::new();
+
+		for query in &self.extra_queries {
+			let mut out = String::new();
+			let len;
+
+			let mut savepoint = client.transaction()
+				.expect("Coult not create a savepoint");
+			let rows = &savepoint.query(&query[..], &[]);
+			savepoint.rollback().expect("Could not rollback savepoint");
+
+			match rows {
+				Ok(rows) => {
+					len = rows.len();
+					for row in rows {
+						out.push_str(&row_to_string(row, &query));
+					}
+				},
+				Err(e) => {
+					len = 0;
+					out.push_str(&format!("Could not execute query:\n{}\n", e));
+				}
+			}
+
+			result.insert(query.clone(), (len, out));
+		}
+
+		ExecutedQueries::new_from(result)
+	}
+
 	pub fn run(&self) -> Result<(), String> {
 		let (mut client, pgver) = match self.connect() {
 			Ok(c) => c,
@@ -444,10 +487,12 @@ impl App {
 			.expect("Could not start a transaction");
 
 		self.created(&mut transaction);
-		let from = Extension::snapshot(&self.extname, &mut transaction, pgver);
+		let mut from = Extension::snapshot(&self.extname, &mut transaction, pgver);
+		from.set_extra_queries(self.run_extra_queries(&mut transaction));
 
 		self.updated(&mut transaction);
-		let to = Extension::snapshot(&self.extname, &mut transaction, pgver);
+		let mut to = Extension::snapshot(&self.extname, &mut transaction, pgver);
+		to.set_extra_queries(self.run_extra_queries(&mut transaction));
 
 		let res = from.compare(&to);
 
@@ -458,6 +503,52 @@ impl App {
 			Some(m) => Err(m.to_string()),
 		}
 	}
+}
+
+fn row_to_string(row: &postgres::row::Row, query: &str) -> String {
+	let mut line = String::new();
+
+	macro_rules! DeparseField {
+		($i:ident, $col:ident, $($pg:ident => $rust:ty ),*,) => {
+			let val = match $col.type_() {
+			$(
+				&postgres::types::Type::$pg => {
+					match row.try_get::<_, $rust>($i) {
+						Ok(v) => v.to_string(),
+						Err(_) => String::from("<NULL>"),
+					}
+				},
+			)*
+				_ => {
+					App::error(
+						format!("Type \"{}\" for column \"{}\" not handled. \
+						Query:\n{}",
+							$col.type_(), $col.name(), query));
+					format!("unhandled")
+				},
+			};
+			line.push_str(&format!("{}: {}\n", $col.name(), val));
+		}
+	}
+
+	for (i, col) in row.columns().iter().enumerate() {
+		DeparseField!(i,col,
+			BOOL    => bool,
+			CHAR    => i8,
+			INT2    => i16,
+			INT4    => i32,
+			INT8    => i64,
+			FLOAT4  => f32,
+			FLOAT8  => f64,
+			NAME    => String,
+			OID     => u32,
+			TEXT    => String,
+			VARCHAR => String,
+		);
+	}
+	line.push_str("\n");
+
+	line
 }
 
 #[cfg(test)]

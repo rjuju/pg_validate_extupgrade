@@ -41,7 +41,8 @@ pub enum SchemaDiff<'a> {
 		Vec<(DiffSource, Vec<&'a str>)>, Vec<SchemaDiff<'a>>),
 	// (struct type, struct name, Vec<(Option<field>, detail)>)
 	StructDiff(&'a str, &'a str, Vec<(Option<&'a str>, SchemaDiff<'a>)>),
-	UnifiedDiff(Patch<'a, str>),
+	// (source, patch)
+	UnifiedDiff(Option<String>, Patch<'a, str>),
 }
 
 impl<'a> SchemaDiff<'a> {
@@ -214,15 +215,20 @@ impl<'a> SchemaDiff<'a> {
 				}
 				res
 			},
-			SchemaDiff::UnifiedDiff(patch) => {
-			let mut diff = patch.to_string();
-			// XXX I didn't find any API to specify the filenames
-			diff.replace_range(.."--- original\n+++modified".len() + 1,
-					&format!("--- {}\n+++ {}",
-						DiffSource::Installed.str_self(),
-						DiffSource::Upgraded.str_self(),
-						));
-			format!("{}\n", diff)
+			SchemaDiff::UnifiedDiff(s, patch) => {
+				let mut diff = patch.to_string();
+				// XXX I didn't find any API to specify the filenames
+				diff.replace_range(.."--- original\n+++modified".len() + 1,
+						&format!("--- {}\n+++ {}",
+							DiffSource::Installed.str_self(),
+							DiffSource::Upgraded.str_self(),
+							));
+				let info = match s {
+					Some(s) => format!("{}\n", s),
+					None => String::from(""),
+				};
+
+				format!("{}{}\n", info, diff)
 			},
 		}
 	}
