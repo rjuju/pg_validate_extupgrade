@@ -14,6 +14,8 @@ mod pg_event_trigger;
 use pg_event_trigger::EventTrigger;
 mod pg_extconfig;
 use pg_extconfig::ExtConfig;
+mod pg_foreign_data_wrapper;
+use pg_foreign_data_wrapper::ForeignDataWrapper;
 mod pg_operator;
 use pg_operator::Operator;
 mod pg_proc;
@@ -47,6 +49,7 @@ CompareStruct! {
 		operators: Option<BTreeMap<String, Operator>>,
 		types: Option<BTreeMap<String, Type>>,
 		casts: Option<BTreeMap<String, Cast>>,
+		foreign_data_wrappers: Option<BTreeMap<String, ForeignDataWrapper>>,
 		extra_queries: ExecutedQueries,
 	}
 }
@@ -66,6 +69,7 @@ impl Extension {
 			operators: None,
 			types: None,
 			casts: None,
+			foreign_data_wrappers: None,
 			extra_queries: ExecutedQueries::new(),
 		};
 
@@ -99,6 +103,10 @@ impl Extension {
 						"Event triggers were introduced in PostgreSQL 9.3");
 					ext.event_triggers = Some(EventTrigger::snapshot(client,
 							objids, pgver));
+				},
+				"pg_foreign_data_wrapper" => {
+					ext.foreign_data_wrappers = Some(
+						ForeignDataWrapper::snapshot(client, objids, pgver));
 				},
 				"pg_operator" => {
 					ext.operators = Some(Operator::snapshot(client,
