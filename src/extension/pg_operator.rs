@@ -19,16 +19,16 @@ DbStruct! {
 	Operator:oprname:Operator {
 		oprname: Name = (opr_prototype!("o")),
 		oprowner: Name = ("r.rolname"),
-		oprkind: Char,
-		oprcanmerge: Bool,
-		oprcanhash: Bool,
+		oprkind: Char = ("o.oprkind"),
+		oprcanmerge: Bool = ("o.oprcanmerge"),
+		oprcanhash: Bool = ("o.oprcanhash"),
 		oprleft: Option<Name> = ("o.oprleft::regtype::text"),
 		oprright: Name = ("o.oprright::regtype::text"),
 		// may be zero for shell operator, allow NULL here and raise a warning
 		// later if needed
 		oprresult: Option<Name> = ("o.oprresult::regtype::text"),
-		oprcom: Option<Name> = ("o.oprcom::regtype::text"),
-		oprnegate: Option<Name> = ("o.oprnegate::regtype::text"),
+		oprcom: Option<Name> = (opr_prototype!("com")),
+		oprnegate: Option<Name> = (opr_prototype!("neg")),
 		// may be zero for shell operator, allow NULL here and raise a warning
 		// later if needed
 		oprcode: Option<Text> = (proc_prototype!("o.oprcode")),
@@ -59,6 +59,8 @@ pub fn snap_one_operator(client: &mut Transaction, oid: u32, pgver: u32)
 	let sql = format!("SELECT {} \
 		FROM pg_operator o \
 		JOIN pg_roles r ON r.oid = o.oprowner \
+		LEFT JOIN pg_operator com ON com.oid = o.oprcom \
+		LEFT JOIN pg_operator neg ON neg.oid = o.oprnegate \
 		WHERE o.oid = $1",
 		Operator::tlist(pgver).join(", "),
 	);
