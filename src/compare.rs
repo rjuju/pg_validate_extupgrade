@@ -89,13 +89,17 @@ pub fn compare_map<'a, T>(self_map: &'a BTreeMap<String, T>,
 		}
 }
 
+fn type_of<T>(_: &T) -> String {
+    format!("{}", std::any::type_name::<T>())
+}
+
 pub trait Compare<'a> {
 	fn compare(&'a self, other: &'a Self) -> Option<SchemaDiff<'a>>;
 	fn typname() -> &'static str {
 		panic!("Should not be called.");
 	}
 	fn value(&self) -> String {
-		panic!("Should not be called");
+		panic!("Should not be called for type {}", type_of(&self));
 	}
 }
 
