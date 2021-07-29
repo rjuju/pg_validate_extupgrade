@@ -8,6 +8,7 @@ use crate::pgdiff::{SchemaDiff, DiffSource};
 
 pub const PG_9_3: u32 = 90300;
 pub const PG_9_4: u32 = 90400;
+pub const PG_9_5: u32 = 90500;
 pub const PG_9_6: u32 = 90600;
 pub const PG_10: u32 = 100000;
 pub const PG_11: u32 = 110000;

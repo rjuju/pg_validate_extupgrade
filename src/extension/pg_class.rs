@@ -109,7 +109,10 @@ fn snap_one_class(client: &mut Transaction, oid: u32, pgver: u32)
 	let constraints = Constraint::snapshot_per_table(client, oid, pgver);
 	let rules = Rewrite::snapshot(client, oid, pgver);
 	let triggers = Trigger::snapshot(client, oid, pgver);
-	let policies = Policy::snapshot(client, oid, pgver);
+	let policies = match pgver {
+		PG_9_5..=PG_MAX => Policy::snapshot(client, oid, pgver),
+		_ => BTreeMap::new(),
+	};
 
 	Some(
 		Relation {
