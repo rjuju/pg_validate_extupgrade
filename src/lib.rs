@@ -26,7 +26,7 @@ use crate::extension::Extension;
 
 #[macro_use]
 mod compare;
-use crate::compare::Compare;
+use crate::compare::{Compare, PG_9_6};
 
 mod pgdiff;
 mod pgtype;
@@ -419,27 +419,33 @@ impl App {
 		}
 	}
 
-	fn created(&self, client: &mut postgres::Transaction) {
-			if let Err(e) = client.simple_query(
-				&format!("CREATE EXTENSION {} VERSION '{}'",
-					self.extname,
-					self.to),
-			) {
-				App::error(e.to_string());
-			};
+	fn created(&self, client: &mut postgres::Transaction, pgver: u32) {
+		let cascade = match pgver >= PG_9_6 {
+			true => "CASCADE",
+			false => "",
+		};
+
+		if let Err(e) = client.simple_query(
+			&format!("CREATE EXTENSION {} VERSION '{}' {} ;",
+				self.extname,
+				self.to,
+				cascade),
+		) {
+			App::error(e.to_string());
+		};
 	}
 
 	fn updated(&self, client: &mut postgres::Transaction) {
-			if let Err(e) = client.simple_query(
-				&format!("DROP EXTENSION {e};\
+		if let Err(e) = client.simple_query(
+			&format!("DROP EXTENSION {e} CASCADE ;\
 					CREATE EXTENSION {e} VERSION '{}'; \
 					ALTER EXTENSION {e} UPDATE TO '{}'",
 					self.from,
 					self.to,
 					e = self.extname,)
-			) {
-				App::error(e.to_string());
-			};
+		) {
+			App::error(e.to_string());
+		};
 	}
 
 	fn run_extra_queries(&self, client: &mut postgres::Transaction)
@@ -486,7 +492,7 @@ impl App {
 		let mut transaction = client.transaction()
 			.expect("Could not start a transaction");
 
-		self.created(&mut transaction);
+		self.created(&mut transaction, pgver);
 		let mut from = Extension::snapshot(&self.extname, &mut transaction, pgver);
 		from.set_extra_queries(self.run_extra_queries(&mut transaction));
 
