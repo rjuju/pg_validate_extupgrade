@@ -391,7 +391,22 @@ macro_rules! DbStruct {
 			fn from_row(row: &Row) -> Self {
 				$struct {
 					$(
-						$field: row.get(stringify!($field)),
+						$field: row.try_get(stringify!($field))
+							.unwrap_or_else(|e| {
+								println!("Could not import {} row \
+									\n{}: {} \
+									\ncolumn: {} \
+									\nError: {}",
+									stringify!($struct),
+									stringify!($ident),
+									match row.try_get(stringify!($ident)) {
+										Ok(f) => f,
+										Err(_) => String::from("(unknown)"),
+									},
+									stringify!($field),
+									e);
+								std::process::exit(1);
+						}),
 					)*
 				}
 			}
