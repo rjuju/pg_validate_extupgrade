@@ -311,6 +311,13 @@ ERROR: Differences found:
                 - character varying(30)
                 + character varying(20)
 
+      - mismatch found for Relation public.tbl_att:
+        - in attributes:
+          - installed has 1 more elements (5) than upgraded (4)
+          - mismatch for elem #5:
+            - upgraded has no value, while installed has
+              + Attribute id5
+
       - mismatch found for Relation public.tbl_rewrite:
         - in rules:
           installed and upgraded both have 3 Rule but some mismatch in them:

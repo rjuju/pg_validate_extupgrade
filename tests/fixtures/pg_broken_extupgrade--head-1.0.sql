@@ -15,6 +15,7 @@ CREATE TABLE tbl1(id integer, val text);
 CREATE TABLE tbl2(id integer, val text);
 CREATE TABLE tbl3(id integer, val text);
 CREATE TABLE tbl4(id integer, val varchar(20));
+CREATE TABLE tbl_att(id1 int, id2 int, id3 int, id4 int);
 CREATE TABLE logged(id integer, val text);
 COMMENT ON TABLE logged IS 'I''m logged';
 COMMENT ON COLUMN logged.id IS 'id column';

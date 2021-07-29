@@ -336,6 +336,12 @@ macro_rules! DbStruct {
 			fn typname() -> &'static str {
 				stringify!($typname)
 			}
+
+			fn value(&self) -> String {
+				String::from(
+					format!("{} {}", stringify!($typname), self.$ident)
+				)
+			}
 		}
 
 		impl Sql for $struct {
