@@ -98,7 +98,7 @@ ERROR: Differences found:
 
       - mismatch found for Relation public.logged:
         - in attributes:
-          - mismatch for elem #0:
+          - mismatch for elem #1:
             - mismatch found for Attribute id:
               - in comment:
                 - ID column
@@ -122,7 +122,7 @@ ERROR: Differences found:
 
       - mismatch found for Relation public.main:
         - in attributes:
-          - mismatch for elem #0:
+          - mismatch for elem #1:
             - mismatch found for Attribute id:
               - in attnotnull:
                 - true
@@ -222,7 +222,7 @@ ERROR: Differences found:
 
               - in stxkind:
                 - installed has 1 more elements (4) than upgraded (3)
-                - mismatch for elem #3:
+                - mismatch for elem #4:
                   - upgraded has no value, while installed has
                     + 101
 
@@ -232,7 +232,7 @@ ERROR: Differences found:
 
             - mismatch found for ExtendedStatistic public.tbl0_stats_n:
               - in stxkind:
-                - mismatch for elem #0:
+                - mismatch for elem #1:
                   - f
                   + d
 
@@ -261,13 +261,13 @@ ERROR: Differences found:
 
       - mismatch found for Relation public.tbl2:
         - in attributes:
-          - mismatch for elem #0:
+          - mismatch for elem #1:
             - mismatch found for Attribute broken_id:
               - in attname:
                 - broken_id
                 + id
 
-          - mismatch for elem #1:
+          - mismatch for elem #2:
             - mismatch found for Attribute val:
               - in attcollation:
                 - upgraded has no value, while installed has
@@ -275,7 +275,7 @@ ERROR: Differences found:
 
       - mismatch found for Relation public.tbl3:
         - in attributes:
-          - mismatch for elem #0:
+          - mismatch for elem #1:
             - mismatch found for Attribute id:
               - in attnotnull:
                 - true
@@ -285,7 +285,7 @@ ERROR: Differences found:
                 - upgraded has no value, while installed has
                   + nextval('public.tbl3_id_seq'::regclass)
 
-          - mismatch for elem #1:
+          - mismatch for elem #2:
             - mismatch found for Attribute val:
               - in atttype:
                 - character varying(30)
@@ -305,7 +305,7 @@ ERROR: Differences found:
 
       - mismatch found for Relation public.tbl4:
         - in attributes:
-          - mismatch for elem #1:
+          - mismatch for elem #2:
             - mismatch found for Attribute val:
               - in atttype:
                 - character varying(30)
@@ -510,7 +510,7 @@ ERROR: Differences found:
         - in relation:
           - mismatch found for Relation public.typ_composite:
             - in attributes:
-              - mismatch for elem #0:
+              - mismatch for elem #1:
                 - mismatch found for Attribute col1:
                   - in atttype:
                     - text
@@ -520,13 +520,13 @@ ERROR: Differences found:
                     - x
                     + p
 
-              - mismatch for elem #1:
+              - mismatch for elem #2:
                 - mismatch found for Attribute col2:
                   - in attcollation:
                     - upgraded has no value, while installed has
                       + C
 
-              - mismatch for elem #2:
+              - mismatch for elem #3:
                 - mismatch found for Attribute col4:
                   - in attname:
                     - col4
@@ -539,7 +539,7 @@ ERROR: Differences found:
       - mismatch found for Type public.typ_enum:
         - in typenum:
           - installed has 1 more elements (3) than upgraded (2)
-          - mismatch for elem #2:
+          - mismatch for elem #3:
             - upgraded has no value, while installed has
               + c=3
 

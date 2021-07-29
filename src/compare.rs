@@ -113,7 +113,7 @@ where T: std::fmt::Debug
 		for (i, a) in self.iter().enumerate() {
 			match other.get(i) {
 				None => {
-					ms.push((i, Box::new(SchemaDiff::NoneDiff(
+					ms.push((i + 1, Box::new(SchemaDiff::NoneDiff(
 									DiffSource::Upgraded,
 									self.get(i).unwrap().value()),
 					)));
@@ -129,7 +129,7 @@ where T: std::fmt::Debug
 		// And check extraneous element in the "other" array, if if has more
 		// elements
 		for i in self.len()..other.len() {
-			ms.push((self.len() - 1 + i, Box::new(SchemaDiff::NoneDiff(
+			ms.push((i + 1, Box::new(SchemaDiff::NoneDiff(
 							DiffSource::Installed,
 							other.get(i).unwrap().value(),
 							),
