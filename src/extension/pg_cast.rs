@@ -18,7 +18,7 @@ DbStruct! {
 	Cast:castname:Cast {
 		castname: Text = ("castsource::regtype::text || ' -> ' || \
 			casttarget::regtype::text"),
-		castfunc: Text = (proc_prototype!("castfunc")),
+		castfunc: Option<Text> = (proc_prototype!("castfunc")),
 		castcontext: Char,
 		castmethod: Char,
 		comment: Option<Text> = ("obj_description(oid, 'pg_cast')"),
