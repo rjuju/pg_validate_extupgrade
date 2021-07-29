@@ -10,7 +10,7 @@ use crate::{
 
 DbStruct! {
 	Trigger:tgname:Trigger {
-		tgparentid: Name = ("tgparentid::regclass::text"),
+		tgparentid: Name = ("tgparentid::regclass::text") {PG_13..},
 		tgname: Name,
 		tgdef: Text = ("pg_get_triggerdef(oid)"),
 	}
