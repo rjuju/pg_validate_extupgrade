@@ -173,9 +173,21 @@ Connected, server version 140000
 WARNING: Shell type found for type public.shell_1
 WARNING: Shell type found for type public.shell_1
 ERROR: Differences found:
+Some GUC changes leaked the script for version head-1.1:
+ - maintenance_work_mem changed to: 6666kB
+ - work_mem changed to: 456kB
+
+Some GUC changes leaked the script for version head-1.0:
+ - maintenance_work_mem changed to: 6666kB
+ - work_mem changed to: 123kB
+
+Some GUC changes leaked the script for version head-1.0--head-1.1:
+ - maintenance_work_mem changed to: 6666kB
+ - work_mem changed to: 321kB
+
 - mismatch found for Extension pg_broken_extupgrade:
   - in relations:
-    installed and upgraded both have 19 Relation but some mismatch in them:
+    installed and upgraded both have 20 Relation but some mismatch in them:
       3 Relation missing in installed:
         - public.missing2
         - public.papart

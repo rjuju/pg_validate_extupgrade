@@ -1,6 +1,9 @@
 -- complain if script is sourced in psql, rather than via CREATE EXTENSION
 \echo Use "CREATE EXTENSION pg_broken_extupgrade" to load this file. \quit
 
+SET work_mem = '456';
+SET LOCAL maintenance_work_mem TO '6666';
+SET LOCAL client_min_messages = WARNING;
 CREATE TABLE dump_0(id integer);
 SELECT pg_extension_config_dump('dump_0', 'WHERE id != 0');
 CREATE TABLE dump_1(id integer);

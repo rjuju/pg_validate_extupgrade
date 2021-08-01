@@ -23,6 +23,7 @@ use toml::Value;
 
 mod extension;
 use crate::extension::Extension;
+mod guc;
 
 #[macro_use]
 mod compare;
@@ -30,7 +31,7 @@ use crate::compare::{Compare, PG_9_6};
 
 mod pgdiff;
 mod pgtype;
-use pgtype::ExecutedQueries;
+use pgtype::{ExecutedQueries, Guc};
 
 pub mod elog {
 	pub const WARNING: u8 = 19;
@@ -48,6 +49,8 @@ pub mod elog {
 		eprintln!("{}: {}", lvl(level), msg);
 	}
 }
+
+use elog::*;
 
 #[derive(Deserialize)]
 struct Config {
@@ -151,7 +154,7 @@ impl<'a> Config {
 					"dbname" | "extra_queries" => {
 				},
 				_ => {
-					elog::elog(elog::WARNING,
+					elog(WARNING,
 						&format!("Unexpected {} key \"{}\"", format, k));
 				}
 			}
@@ -419,33 +422,57 @@ impl App {
 		}
 	}
 
-	fn created(&self, client: &mut postgres::Transaction, pgver: u32) {
+	fn install_version<'a>(&self, client: &mut postgres::Transaction, pgver: u32,
+		extver: &'a str) -> (Guc, Guc)
+	{
 		let cascade = match pgver >= PG_9_6 {
 			true => "CASCADE",
 			false => "",
 		};
 
+		let guc_pre = Guc::snapshot(client, String::from(extver));
+
 		if let Err(e) = client.simple_query(
 			&format!("CREATE EXTENSION {} VERSION '{}' {} ;",
 				self.extname,
-				self.to,
+				extver,
 				cascade),
 		) {
 			App::error(e.to_string());
 		};
+
+		let guc_post = Guc::snapshot(client, String::from(extver));
+
+		client.execute("RESET ALL", &[])
+			.expect("Could not execute RESET ALL");
+
+		(guc_pre, guc_post)
 	}
 
-	fn updated(&self, client: &mut postgres::Transaction) {
-		if let Err(e) = client.simple_query(
-			&format!("DROP EXTENSION {e} CASCADE ;\
-					CREATE EXTENSION {e} VERSION '{}'; \
-					ALTER EXTENSION {e} UPDATE TO '{}'",
+	fn update_version<'a>(&self, client: &mut postgres::Transaction)
+		-> (Guc, Guc)
+	{
+		let guc_ver = String::from(format!("{}--{}",
 					self.from,
 					self.to,
-					e = self.extname,)
+			));
+
+		let guc_pre = Guc::snapshot(client, guc_ver.clone());
+
+		if let Err(e) = client.simple_query(
+			&format!("ALTER EXTENSION {} UPDATE TO '{}'",
+					self.extname,
+					self.to)
 		) {
 			App::error(e.to_string());
 		};
+
+		let guc_post = Guc::snapshot(client, guc_ver);
+
+		client.execute("RESET ALL", &[])
+			.expect("Could not execute RESET ALL");
+
+		(guc_pre, guc_post)
 	}
 
 	fn run_extra_queries(&self, client: &mut postgres::Transaction)
@@ -492,11 +519,36 @@ impl App {
 		let mut transaction = client.transaction()
 			.expect("Could not start a transaction");
 
-		self.created(&mut transaction, pgver);
-		let mut from = Extension::snapshot(&self.extname, &mut transaction, pgver);
+		let mut result = String::new();
+
+		// First round installing directly the target version
+		let (pre, post) = self.install_version(&mut transaction, pgver,
+			&self.to);
+
+		if let Some(d) = pre.compare(&post) {
+			result.push_str(&d.to_string());
+		}
+
+		let mut from = Extension::snapshot(&self.extname, &mut transaction,
+			pgver);
 		from.set_extra_queries(self.run_extra_queries(&mut transaction));
 
-		self.updated(&mut transaction);
+		// Remove the extension
+		transaction.simple_query(&format!("DROP EXTENSION {}", self.extname))
+			.expect("Could not execute DROP EXTENSION");
+
+		// Second round, install source version and update it
+		let (pre, post) = self.install_version(&mut transaction, pgver,
+			&self.from);
+		if let Some(d) = pre.compare(&post) {
+			result.push_str(&d.to_string());
+		}
+
+		 let (pre, post) = self.update_version(&mut transaction);
+		 if let Some(d) = pre.compare(&post) {
+			result.push_str(&d.to_string());
+		}
+
 		let mut to = Extension::snapshot(&self.extname, &mut transaction, pgver);
 		to.set_extra_queries(self.run_extra_queries(&mut transaction));
 
@@ -504,9 +556,13 @@ impl App {
 
 		transaction.rollback().expect("Could not rollback the transaction");
 
-		match res {
-			None => Ok(()),
-			Some(m) => Err(m.to_string()),
+		if let Some(m) = res {
+			result.push_str(&m.to_string());
+		};
+
+		match result.len() {
+			0 => Ok(()),
+			_ => Err(result),
 		}
 	}
 }

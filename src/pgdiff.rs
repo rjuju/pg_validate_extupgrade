@@ -43,6 +43,8 @@ pub enum SchemaDiff<'a> {
 	StructDiff(&'a str, &'a str, Vec<(Option<&'a str>, SchemaDiff<'a>)>),
 	// (source, patch)
 	UnifiedDiff(Option<String>, Patch<'a, str>),
+	// extver, Vec<(guc name, new val)>
+	GucDiff(String, Vec<(&'a str, &'a str)>),
 }
 
 impl<'a> SchemaDiff<'a> {
@@ -230,6 +232,23 @@ impl<'a> SchemaDiff<'a> {
 
 				format!("{}{}\n", info, diff)
 			},
+			SchemaDiff::GucDiff(extver, vec) => {
+				let mut res = String::new();
+
+				res.push_str(&format!("Some GUC changes leaked the script \
+					for version {}:\n", extver));
+
+				for (guc, val) in vec {
+					res.push_str(&format!(
+						"{i} - {} changed to: {}\n",
+						guc, val, i = ind0,
+					));
+				}
+
+				res.push_str("\n");
+
+				res
+			}
 		}
 	}
 }

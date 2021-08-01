@@ -242,3 +242,36 @@ impl<'a> Compare<'a> for ExecutedQueries {
 			Some(query_cmp))
 	}
 }
+
+#[derive(Debug)]
+pub struct Guc {
+	extver: String,
+	gucs: BTreeMap<String, String>,
+}
+
+impl<'a> Guc {
+	pub fn new_from(extver: String, gucs: BTreeMap<String, String>) -> Self {
+		Guc { extver, gucs }
+	}
+}
+
+impl<'a> Compare<'a> for Guc {
+	fn compare(&'a self, other: &'a Self) -> Option<SchemaDiff<'a>>
+	{
+		let mut diffs = Vec::new();
+
+		// Extension might add new GUCs, so only warn about changing ones
+		for (k, v) in self.gucs.iter() {
+			if let Some(o) = other.gucs.get(k) {
+				if v != o {
+					diffs.push((&k[..], &o[..]));
+				}
+			}
+		}
+
+		match diffs.len() {
+			0 => None,
+			_ => Some(SchemaDiff::GucDiff(self.extver.clone(), diffs)),
+		}
+	}
+}
