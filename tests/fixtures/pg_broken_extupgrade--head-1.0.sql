@@ -33,6 +33,7 @@ CREATE TABLE options_1(id integer);
 ALTER TABLE options_1 SET (fillfactor = 80, toast_tuple_target = 8100);
 CREATE TABLE options_2(id integer);
 ALTER TABLE options_2 SET (fillfactor = 80, toast_tuple_target = 8100);
+CREATE TABLE tbl_dropcol(id integer, val text);
 CREATE VIEW v1 AS select 1;
 COMMENT ON VIEW v1 IS 'one';
 CREATE TABLE tbl_rewrite(id integer);
