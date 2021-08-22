@@ -16,6 +16,8 @@ mod pg_extconfig;
 use pg_extconfig::ExtConfig;
 mod pg_foreign_data_wrapper;
 use pg_foreign_data_wrapper::ForeignDataWrapper;
+mod pg_namespace;
+use pg_namespace::Namespace;
 mod pg_opclass;
 use pg_opclass::OpClass;
 mod pg_opfamily;
@@ -54,6 +56,7 @@ CompareStruct! {
 		types: Option<BTreeMap<String, Type>>,
 		casts: Option<BTreeMap<String, Cast>>,
 		foreign_data_wrappers: Option<BTreeMap<String, ForeignDataWrapper>>,
+		namespaces: Option<BTreeMap<String, Namespace>>,
 		opclasses: Option<BTreeMap<String, OpClass>>,
 		opfamilies: Option<BTreeMap<String, OpFamily>>,
 		extra_queries: ExecutedQueries,
@@ -76,6 +79,7 @@ impl Extension {
 			types: None,
 			casts: None,
 			foreign_data_wrappers: None,
+			namespaces: None,
 			opclasses: None,
 			opfamilies: None,
 			extra_queries: ExecutedQueries::new(),
@@ -115,6 +119,10 @@ impl Extension {
 				"pg_foreign_data_wrapper" => {
 					ext.foreign_data_wrappers = Some(
 						ForeignDataWrapper::snapshot(client, objids, pgver));
+				},
+				"pg_namespace" => {
+					ext.namespaces = Some(Namespace::snapshot(client,
+							objids, pgver));
 				},
 				"pg_opclass" => {
 					ext.opclasses = Some(OpClass::snapshot(client,

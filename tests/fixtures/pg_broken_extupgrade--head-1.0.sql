@@ -98,3 +98,5 @@ COMMENT ON CAST (integer AS point) IS 'assignment';
 CREATE AGGREGATE agg_1 (int) (sfunc = int4smaller, stype = int4);
 COMMENT ON AGGREGATE agg_1(int) IS 'smaller';
 CREATE POLICY popol0 ON tbl0 AS PERMISSIVE FOR ALL TO public USING (id > 0);
+CREATE SCHEMA nsp_1;
+CREATE SCHEMA nsp_2;

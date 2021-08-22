@@ -678,6 +678,13 @@ Some GUC changes leaked the script for version head-1.0--head-1.1:
           - implicit
           + assignment
 
+  - in namespaces:
+    installed and upgraded both have 2 Namespace but some mismatch in them:
+      - mismatch found for Namespace nsp_2:
+        - in nspacl:
+          - upgraded has no value, while installed has
+            + {rjuju=UC/rjuju}
+
   - in extra_queries:
     installed and upgraded both have 3 Resultset but some mismatch in them:
 SELECT 1 / (random() * 2)::int AS may_fail

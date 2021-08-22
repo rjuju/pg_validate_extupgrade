@@ -110,3 +110,6 @@ COMMENT ON CAST (integer AS point) IS 'implicit';
 CREATE AGGREGATE agg_1 (integer) (sfunc = int4larger, stype = int4);
 COMMENT ON AGGREGATE agg_1(int) IS 'larger';
 CREATE POLICY popol0 ON tbl0 AS RESTRICTIVE FOR SELECT TO current_user USING (id = 0);
+CREATE SCHEMA nsp_1;
+CREATE SCHEMA nsp_2;
+REVOKE USAGE ON SCHEMA nsp_2 FROM public;
