@@ -685,6 +685,14 @@ Some GUC changes leaked the script for version head-1.0--head-1.1:
           - upgraded has no value, while installed has
             + {rjuju=UC/rjuju}
 
+  - in opfamilies:
+    installed and upgraded both have 4 OpFamily but some mismatch in them:
+      1 OpFamily missing in installed:
+        - public.my_opf_btree USING btree
+
+      1 OpFamily missing in upgraded:
+        - public.my_opf_btree USING gin
+
   - in extra_queries:
     installed and upgraded both have 3 Resultset but some mismatch in them:
 SELECT 1 / (random() * 2)::int AS may_fail

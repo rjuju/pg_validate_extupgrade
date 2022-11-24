@@ -15,7 +15,7 @@ use crate::{
 
 DbStruct! {
 	OpFamily:opfname:OpFamily {
-		opfname: Text = ("n.nspname || '.' || opf.opfname"),
+		opfname: Text = ("n.nspname || '.' || opf.opfname || ' USING ' || am.amname"),
 		opfmethod: Name = ("am.amname"),
 		opfowner: Name = ("r.rolname"),
 	}

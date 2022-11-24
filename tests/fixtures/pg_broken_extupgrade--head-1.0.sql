@@ -100,3 +100,8 @@ COMMENT ON AGGREGATE agg_1(int) IS 'smaller';
 CREATE POLICY popol0 ON tbl0 AS PERMISSIVE FOR ALL TO public USING (id > 0);
 CREATE SCHEMA nsp_1;
 CREATE SCHEMA nsp_2;
+CREATE OPERATOR FAMILY my_opf_btree USING btree;
+-- those 3 are just to validate that the am is used in the identifier
+CREATE OPERATOR FAMILY my_opf1 USING btree;
+CREATE OPERATOR FAMILY my_opf1 USING gin;
+CREATE OPERATOR FAMILY my_opf1 USING gist;
