@@ -26,7 +26,7 @@ macro_rules! opr_prototype {
 			'(' || {alias}.oprleft::regtype::text \
 			|| ',' || \
 			{alias}.oprright::regtype::text || ')'",
-			alias=$alias);
+			alias=$alias)
 	}
 }
 
@@ -35,7 +35,7 @@ macro_rules! proc_prototype {
 	($field:literal) => {
 		format!("{field}::regproc::text || '(' || \
 			pg_get_function_arguments({field}) || ')'",
-			field=$field);
+			field=$field)
 	}
 }
 
