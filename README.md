@@ -685,12 +685,22 @@ Some GUC changes leaked the script for version head-1.0--head-1.1:
           - upgraded has no value, while installed has
             + {rjuju=UC/rjuju}
 
+  - in opclasses:
+    installed and upgraded both have 4 OpClass but some mismatch in them:
+      1 OpClass missing in installed:
+        - public.my_opc_btree USING btree
+
+      1 OpClass missing in upgraded:
+        - public.my_opc_btree USING gin
+
   - in opfamilies:
-    installed and upgraded both have 4 OpFamily but some mismatch in them:
-      1 OpFamily missing in installed:
+    installed and upgraded both have 8 OpFamily but some mismatch in them:
+      2 OpFamily missing in installed:
+        - public.my_opc_btree USING btree
         - public.my_opf_btree USING btree
 
-      1 OpFamily missing in upgraded:
+      2 OpFamily missing in upgraded:
+        - public.my_opc_btree USING gin
         - public.my_opf_btree USING gin
 
   - in extra_queries:

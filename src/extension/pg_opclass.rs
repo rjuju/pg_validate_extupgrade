@@ -15,7 +15,7 @@ use crate::{
 
 DbStruct! {
 	OpClass:opcname:OpClass {
-		opcname: Text = ("n.nspname || '.' || opc.opcname"),
+		opcname: Text = ("n.nspname || '.' || opc.opcname || ' USING ' || am.amname"),
 		opcmethod: Name = ("am.amname"),
 		opcowner: Name = ("r.rolname"),
 		opcfamily: Name = ("opfn.nspname || '.' || opf.opfname"),

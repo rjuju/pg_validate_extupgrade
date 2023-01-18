@@ -105,3 +105,16 @@ CREATE OPERATOR FAMILY my_opf_btree USING btree;
 CREATE OPERATOR FAMILY my_opf1 USING btree;
 CREATE OPERATOR FAMILY my_opf1 USING gin;
 CREATE OPERATOR FAMILY my_opf1 USING gist;
+-- same for operator classes
+CREATE OPERATOR CLASS my_opc_btree FOR TYPE int4 USING btree AS
+    OPERATOR 1 = (int4, int4),
+    FUNCTION 1 btint4cmp(int4, int4);
+CREATE OPERATOR CLASS my_opc1 FOR TYPE int4 USING btree AS
+    OPERATOR 1 = (int4, int4),
+    FUNCTION 1 btint4cmp(int4, int4);
+CREATE OPERATOR CLASS my_opc1 FOR TYPE int4 USING gin AS
+    OPERATOR 1 = (int4, int4),
+    FUNCTION 1 btint4cmp(int4, int4);
+CREATE OPERATOR CLASS my_opc1 FOR TYPE int4 USING gist AS
+    OPERATOR 1 = (int4, int4),
+    FUNCTION 1 btint4cmp(int4, int4);
