@@ -167,7 +167,14 @@ Here is the output of the tool when used with the `pg_broken_extupgrade`
 extension provided in the test/ directory:
 
 ```
-$ pg_validate_extupgrade -c pg_broken_extupgrade.toml
+# build a debug version of the tool
+$ cargo build
+
+# build the test extension (requires postgres headers)
+$ make -C tests/fixtures install
+
+# test the tool
+$ ./target/debug/pg_validate_extupgrade -c pg_broken_extupgrade.toml
 WARNING: Unexpected TOML key "wrong_key"
 Connected, server version 140000
 WARNING: Shell type found for type public.shell_1
