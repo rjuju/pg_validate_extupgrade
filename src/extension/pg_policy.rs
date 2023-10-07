@@ -12,7 +12,7 @@ DbStruct! {
 	Policy:polname:Policy {
 		polname: Name,
 		polcmd: Char,
-		polpermissive: Bool,
+		polpermissive: Bool {PG_10..},
 		polroles: List = ("CASE \
 			WHEN p.polroles = '{0}'::oid[] \
 				THEN string_to_array('public'::text, ''::text)::name[]
