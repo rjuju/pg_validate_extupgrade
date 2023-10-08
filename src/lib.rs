@@ -62,6 +62,7 @@ struct Config {
 	user: Option<String>,
 	dbname: Option<String>,
 	extra_queries: Option<Vec<String>>,
+	pre_upgrade_queries: Option<Vec<String>>,
 }
 
 impl<'a> Config {
@@ -75,6 +76,7 @@ impl<'a> Config {
 			user: None,
 			dbname: None,
 			extra_queries: None,
+			pre_upgrade_queries: None,
 		}
 	}
 
@@ -151,7 +153,7 @@ impl<'a> Config {
 		for k in keys {
 			match &k[..] {
 				"extname" | "from" | "to" | "host" | "port" | "user" |
-					"dbname" | "extra_queries" => {
+					"dbname" | "extra_queries" | "pre_upgrade_queries" => {
 				},
 				_ => {
 					elog(WARNING,
@@ -246,6 +248,7 @@ pub struct App {
 	user: String,
 	dbname: String,
 	extra_queries: Vec<String>,
+	pre_upgrade_queries: Vec<String>,
 }
 
 impl App {
@@ -336,6 +339,10 @@ impl App {
 			config.extra_queries = Some(vec![]);
 		}
 
+		if config.pre_upgrade_queries.is_none() {
+			config.pre_upgrade_queries = Some(vec![]);
+		}
+
 		config.apply_matches(&matches);
 
 		if config.from == config.to {
@@ -353,6 +360,7 @@ impl App {
 			user: config.user.unwrap(),
 			dbname: config.dbname.unwrap(),
 			extra_queries: config.extra_queries.unwrap(),
+			pre_upgrade_queries: config.pre_upgrade_queries.unwrap(),
 		}
 	}
 
@@ -459,6 +467,8 @@ impl App {
 
 		let guc_pre = Guc::snapshot(client, guc_ver.clone());
 
+		self.run_queries(client, &self.pre_upgrade_queries, false);
+
 		if let Err(e) = client.simple_query(
 			&format!("ALTER EXTENSION {} UPDATE TO '{}'",
 					self.extname,
@@ -475,19 +485,28 @@ impl App {
 		(guc_pre, guc_post)
 	}
 
-	fn run_extra_queries(&self, client: &mut postgres::Transaction)
+	fn run_queries(&self, client: &mut postgres::Transaction,
+		queries: &Vec<String>, allow_error: bool)
 	-> ExecutedQueries
 	{
 		let mut result = BTreeMap::new();
 
-		for query in &self.extra_queries {
+		for query in queries {
 			let mut out = String::new();
 			let len;
 
 			let mut savepoint = client.transaction()
 				.expect("Coult not create a savepoint");
 			let rows = &savepoint.query(&query[..], &[]);
-			savepoint.rollback().expect("Could not rollback savepoint");
+
+			if allow_error || rows.is_err()
+			{
+				savepoint.rollback().expect("Could not rollback savepoint");
+			}
+			else
+			{
+				savepoint.commit().expect("Could not commit savepoint");
+			}
 
 			match rows {
 				Ok(rows) => {
@@ -498,7 +517,16 @@ impl App {
 				},
 				Err(e) => {
 					len = 0;
-					out.push_str(&format!("Could not execute query:\n{}\n", e));
+					if allow_error
+					{
+						out.push_str(&format!("Could not execute query:\n{}\n",
+								e));
+					}
+					else
+					{
+						App::error(format!("during execution of query\n{}\n{}",
+								query, e));
+					}
 				}
 			}
 
@@ -531,7 +559,8 @@ impl App {
 
 		let mut from = Extension::snapshot(&self.extname, &mut transaction,
 			pgver);
-		from.set_extra_queries(self.run_extra_queries(&mut transaction));
+		from.set_extra_queries(self.run_queries(&mut transaction,
+				&self.extra_queries, true));
 
 		// Remove the extension
 		transaction.simple_query(&format!("DROP EXTENSION {}", self.extname))
@@ -550,7 +579,8 @@ impl App {
 		}
 
 		let mut to = Extension::snapshot(&self.extname, &mut transaction, pgver);
-		to.set_extra_queries(self.run_extra_queries(&mut transaction));
+		to.set_extra_queries(self.run_queries(&mut transaction,
+				&self.extra_queries, true));
 
 		let res = from.compare(&to);
 
