@@ -1,6 +1,6 @@
 /*----------------------------------------------------------------------------
  * Author: Julien Rouhaud
- * Copyright: Copyright (c) 2021-2022 : Julien Rouhaud - All rights reserved
+ * Copyright: Copyright (c) 2021-2024 : Julien Rouhaud - All rights reserved
  *---------------------------------------------------------------------------*/
 use postgres::{Row, Transaction};
 

@@ -767,7 +767,7 @@ SELECT name, version, installed, CASE installed WHEN true THEN random() ELSE NUL
 ```
 
 LICENSE
-    Copyright (c) 2021-2023 Julien Rouhaud - All rights reserved.
+    Copyright (c) 2021-2024 Julien Rouhaud - All rights reserved.
 
       This program is free software: you can redistribute it and/or modify
       it under the terms of the GNU General Public License as published by

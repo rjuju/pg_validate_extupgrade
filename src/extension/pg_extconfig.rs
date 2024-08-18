@@ -1,3 +1,7 @@
+/*----------------------------------------------------------------------------
+ * Author: Julien Rouhaud
+ * Copyright: Copyright (c) 2021-2024 : Julien Rouhaud - All rights reserved
+ *---------------------------------------------------------------------------*/
 use std::collections::BTreeMap;
 use postgres::{Row, Transaction};
 
