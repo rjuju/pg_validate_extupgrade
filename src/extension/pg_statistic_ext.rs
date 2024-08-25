@@ -20,7 +20,7 @@ DbStruct! {
 			JOIN pg_attribute a ON (s.stxrelid = a.attrelid AND \
 				a.attnum = u.attnum AND NOT a.attisdropped))") {..PG_14},
 		stxkind: Vec<Char>,
-		stxstattarget: Integer {PG_13..},
+		stxstattarget: Integer = ("s.stxstattarget::integer") {PG_13..},
 		comment: Option<Text> = ("obj_description(s.oid, 'pg_statistic_ext')"),
 	}
 }

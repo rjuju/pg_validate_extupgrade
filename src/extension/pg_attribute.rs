@@ -15,7 +15,7 @@ DbStruct! {
 	Attribute:attname:Attribute {
 		attname: Name,
 		atttype: Text = ("pg_catalog.format_type(a.atttypid, a.atttypmod)"),
-		attstattarget: Integer = ("attstattarget::int"),
+		attstattarget: Option<Integer> = ("attstattarget::int"),
 		attnum: Integer = ("(row_number() OVER(ORDER BY attnum))::int"),
 		attndims: Integer = ("attndims::int"),
 		attstorage: Char,
