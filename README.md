@@ -187,7 +187,7 @@ $ cargo build
 $ make -C tests/fixtures install
 
 # test the tool
-$ ./target/debug/pg_validate_extupgrade -c pg_broken_extupgrade.toml
+$ ./target/debug/pg_validate_extupgrade -c tests/fixtures/pg_broken_extupgrade.toml
 WARNING: Unexpected TOML key "wrong_key"
 Connected, server version 140000
 WARNING: Shell type found for type public.shell_1
