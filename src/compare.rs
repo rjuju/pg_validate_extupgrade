@@ -384,13 +384,16 @@ macro_rules! DbStruct {
                             || typname == "classoptions"
                         {
                             typname = String::from("text[]");
+                        } else if typname == "option<text>" {
+                            // FIXME should find a way to handle any Option<>
+                            typname = String::from("text");
                         }
+
                         tlist.push(format!(
                                 "NULL::{} AS {}",
                                 typname,
                                 stringify!($field),
-                        )
-                        );
+                        ));
                     }
                 )*
                     tlist
