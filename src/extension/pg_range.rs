@@ -4,48 +4,42 @@
  *---------------------------------------------------------------------------*/
 use postgres::{Row, Transaction};
 
-use crate::{
-	compare::*,
-	DbStruct,
-	elog::*,
-	pgdiff::SchemaDiff,
-	pgtype::*,
-	proc_prototype,
-};
+use crate::{compare::*, elog::*, pgdiff::SchemaDiff, pgtype::*, proc_prototype, DbStruct};
 
 DbStruct! {
-	Range:rngtypid:Range {
-		rngtypid: Text = ("r.rngtypid::regtype::text"),
-		rngsubtype: Text = ("r.rngsubtype::regtype::text"),
-		rngmultitypid: Text = ("r.rngmultitypid::regtype::text") {PG_14..},
-		rngcollation: Option<Name> = ("c.collname"),
-		rngsubopc: Name = ("opc.opcname"),
-		rngcanonical: Option<Text> = (proc_prototype!("r.rngcanonical")),
-		rngsubdiff: Option<Text> = (proc_prototype!("r.rngsubdiff")),
-	}
+    Range:rngtypid:Range {
+        rngtypid: Text = ("r.rngtypid::regtype::text"),
+        rngsubtype: Text = ("r.rngsubtype::regtype::text"),
+        rngmultitypid: Text = ("r.rngmultitypid::regtype::text") {PG_14..},
+        rngcollation: Option<Name> = ("c.collname"),
+        rngsubopc: Name = ("opc.opcname"),
+        rngcanonical: Option<Text> = (proc_prototype!("r.rngcanonical")),
+        rngsubdiff: Option<Text> = (proc_prototype!("r.rngsubdiff")),
+    }
 }
 
 impl Range {
-	pub fn snapshot(client: &mut Transaction, oid: u32, pgver: u32)
-		-> Option<Range>
-	{
-		let sql = format!("SELECT {} \
-			FROM pg_range r \
-			JOIN pg_opclass opc ON opc.oid = r.rngsubopc \
-			LEFT JOIN pg_collation c ON c.oid = r.rngcollation \
-			WHERE r.rngtypid = $1",
-			Range::tlist(pgver).join(", "),
-		);
-	
-		let row = match client.query_opt(&sql[..], &[&oid]) {
-			Ok(r) => { r },
-			Err(e) => { elog(ERROR, &format!("{}", e)); panic!(); },
-		};
+    pub fn snapshot(client: &mut Transaction, oid: u32, pgver: u32) -> Option<Range> {
+        let sql = format!(
+            "SELECT {} \
+            FROM pg_range r \
+            JOIN pg_opclass opc ON opc.oid = r.rngsubopc \
+            LEFT JOIN pg_collation c ON c.oid = r.rngcollation \
+            WHERE r.rngtypid = $1",
+            Range::tlist(pgver).join(", "),
+        );
 
-		match row {
-			Some(r) => { Some(Range::from_row(&r)) },
-			None => { None },
-		}
-	}
+        let row = match client.query_opt(&sql[..], &[&oid]) {
+            Ok(r) => r,
+            Err(e) => {
+                elog(ERROR, &format!("{}", e));
+                panic!();
+            }
+        };
+
+        match row {
+            Some(r) => Some(Range::from_row(&r)),
+            None => None,
+        }
+    }
 }
-
