@@ -36,8 +36,8 @@ macro_rules! opr_prototype {
 macro_rules! proc_prototype {
     ($field:literal) => {
         format!(
-            "{field}::regproc::text || '(' || \
-            pg_get_function_arguments({field}) || ')'",
+            "CASE WHEN {field} = 0 THEN NULL::text ELSE {field}::regproc::text || '(' || \
+            pg_get_function_arguments({field}) || ')' END",
             field = $field
         )
     };
