@@ -52,6 +52,7 @@ struct Config {
     port: Option<u16>,
     user: Option<String>,
     dbname: Option<String>,
+    schema: Option<String>,
     extra_queries: Option<Vec<String>>,
     pre_upgrade_queries: Option<Vec<String>>,
 }
@@ -66,6 +67,7 @@ impl<'a> Config {
             port: None,
             user: None,
             dbname: None,
+            schema: None,
             extra_queries: None,
             pre_upgrade_queries: None,
         }
@@ -138,6 +140,10 @@ impl<'a> Config {
         if self.dbname.is_none() || matches.occurrences_of("dbname") != 0 {
             self.dbname = Some(String::from(matches.value_of("dbname").unwrap()));
         }
+
+        if self.schema.is_none() || matches.occurrences_of("schema") != 0 {
+            self.schema = Some(String::from(matches.value_of("schema").unwrap()));
+        }
     }
 
     fn check_config_keys<I>(keys: I, format: &str)
@@ -153,6 +159,7 @@ impl<'a> Config {
                 | "port"
                 | "user"
                 | "dbname"
+                | "schema"
                 | "extra_queries"
                 | "pre_upgrade_queries" => {}
                 _ => {
@@ -240,6 +247,7 @@ pub struct App {
     port: u16,
     user: String,
     dbname: String,
+    schema: Option<String>,
     extra_queries: Vec<String>,
     pre_upgrade_queries: Vec<String>,
 }
@@ -318,6 +326,12 @@ impl App {
                     .help("database name"),
             )
             .arg(
+                Arg::with_name("schema")
+                    .short("s")
+                    .long("schema")
+                    .help("schema to install the extension in"),
+            )
+            .arg(
                 Arg::with_name("filename")
                     .short("c")
                     .long("config")
@@ -363,6 +377,7 @@ impl App {
             port: config.port.unwrap(),
             user: config.user.unwrap(),
             dbname: config.dbname.unwrap(),
+            schema: config.schema,
             extra_queries: config.extra_queries.unwrap(),
             pre_upgrade_queries: config.pre_upgrade_queries.unwrap(),
         }
@@ -447,11 +462,21 @@ impl App {
             false => "",
         };
 
+        let schema = match self.schema {
+            Some(ref s) => {
+                // make sure that the target schema exists
+                if let Err(e) = client.simple_query(&format!("CREATE SCHEMA IF NOT EXISTS {}", s)) {
+                    App::error(e.to_string());
+                }
+                format!("SCHEMA {}", s)
+            }
+            None => "".to_string(),
+        };
         let guc_pre = Guc::snapshot(client, String::from(extver));
 
         if let Err(e) = client.simple_query(&format!(
-            "CREATE EXTENSION {} VERSION '{}' {} ;",
-            self.extname, extver, cascade
+            "CREATE EXTENSION {} VERSION '{}' {} {} ;",
+            self.extname, extver, schema, cascade
         )) {
             App::error(e.to_string());
         };
