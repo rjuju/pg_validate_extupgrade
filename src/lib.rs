@@ -142,7 +142,7 @@ impl<'a> Config {
         }
 
         if self.schema.is_none() || matches.occurrences_of("schema") != 0 {
-            self.schema = Some(String::from(matches.value_of("schema").unwrap()));
+            self.schema = matches.value_of("schema").map(|s| String::from(s));
         }
     }
 
