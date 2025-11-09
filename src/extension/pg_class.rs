@@ -32,7 +32,7 @@ DbStruct! {
         relhasrules: Bool,
         relhastriggers: Bool,
         relrowsecurity: Bool {PG_9_5..},
-        relforcerowsecurity: Bool {PG_9_4..},
+        relforcerowsecurity: Bool {PG_9_5..},
         relispopulated: Bool {PG_9_3..},
         relreplident: Char {PG_9_4..},
         relispartition: Bool {PG_10..},
