@@ -33,7 +33,7 @@ DbStruct! {
 }
 
 impl Operator {
-    pub fn snapshot<'a>(
+    pub fn snapshot(
         client: &mut Transaction,
         oids: Vec<u32>,
         pgver: u32,

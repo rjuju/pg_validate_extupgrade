@@ -451,11 +451,11 @@ impl App {
         }
     }
 
-    fn install_version<'a>(
+    fn install_version(
         &self,
         client: &mut postgres::Transaction,
         pgver: u32,
-        extver: &'a str,
+        extver: &str,
     ) -> (Guc, Guc) {
         let cascade = match pgver >= PG_9_6 {
             true => "CASCADE",
@@ -490,7 +490,7 @@ impl App {
         (guc_pre, guc_post)
     }
 
-    fn update_version<'a>(&self, client: &mut postgres::Transaction) -> (Guc, Guc) {
+    fn update_version(&self, client: &mut postgres::Transaction) -> (Guc, Guc) {
         let guc_ver = String::from(format!("{}--{}", self.from, self.to,));
 
         let guc_pre = Guc::snapshot(client, guc_ver.clone());

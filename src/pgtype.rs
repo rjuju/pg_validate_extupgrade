@@ -259,7 +259,7 @@ pub struct Guc {
     gucs: BTreeMap<String, String>,
 }
 
-impl<'a> Guc {
+impl Guc {
     pub fn new_from(extver: String, gucs: BTreeMap<String, String>) -> Self {
         Guc { extver, gucs }
     }
