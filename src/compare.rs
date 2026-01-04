@@ -58,7 +58,7 @@ pub fn compare_map<'a, T>(
             missing_ins.push(&ident[..]);
         }
     }
-    if missing_ins.len() > 0 {
+    if !missing_ins.is_empty() {
         missings.push((DiffSource::Installed, missing_ins));
     }
 
@@ -75,11 +75,11 @@ pub fn compare_map<'a, T>(
             }
         }
     }
-    if missing_upg.len() > 0 {
+    if !missing_upg.is_empty() {
         missings.push((DiffSource::Upgraded, missing_upg));
     }
 
-    if missings.len() == 0 && diffs.len() == 0 {
+    if missings.is_empty() && diffs.is_empty() {
         None
     } else {
         Some(SchemaDiff::HashMapDiff(

@@ -416,7 +416,7 @@ impl App {
             )
             .expect("Could not query pg_available_extension_versions");
 
-        if rows.len() == 0 {
+        if rows.is_empty() {
             App::error(format!("extension \"{}\" does not exits", self.extname));
         }
 
