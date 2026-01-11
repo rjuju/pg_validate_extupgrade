@@ -538,7 +538,7 @@ impl App {
                 Ok(rows) => {
                     len = rows.len();
                     for row in rows {
-                        out.push_str(&row_to_string(row, &query));
+                        out.push_str(&row_to_string(row, query));
                     }
                 }
                 Err(e) => {

@@ -86,7 +86,7 @@ impl<'a> Compare<'a> for String {
         // If the content has at least one newline, use a diffy::Patch for
         // better readibility
         if self.matches('\n').count() > 0 {
-            let patch = create_patch(&self, &other);
+            let patch = create_patch(self, other);
 
             // There's a mismatch if diffy returns at least one chunk
             match patch.hunks().len() {
