@@ -225,7 +225,7 @@ fn btmap_cmp<'a, T>(
 
 impl<'a, T: Compare<'a>> Compare<'a> for BTreeMap<String, T> {
     fn compare(&'a self, other: &'a BTreeMap<String, T>) -> Option<SchemaDiff<'a>> {
-        compare_map(&self, &other, <T>::typname(), Some(btmap_cmp))
+        compare_map(self, other, <T>::typname(), Some(btmap_cmp))
     }
 
     fn typname() -> &'static str {
