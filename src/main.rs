@@ -1,6 +1,6 @@
 /*----------------------------------------------------------------------------
  * Author: Julien Rouhaud
- * Copyright: Copyright (c) 2021-2025 : Julien Rouhaud - All rights reserved
+ * Copyright: Copyright (c) 2021-2026 : Julien Rouhaud - All rights reserved
  *---------------------------------------------------------------------------*/
 use pg_validate_extupgrade::{elog::*, App};
 use std::process;
