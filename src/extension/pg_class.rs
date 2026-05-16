@@ -66,11 +66,8 @@ impl Relation {
         let mut rels = BTreeMap::new();
 
         for oid in oids {
-            match snap_one_class(client, oid, pgver) {
-                Some(r) => {
-                    rels.insert(r.ident.clone(), r);
-                }
-                None => {}
+            if let Some(r) = snap_one_class(client, oid, pgver) {
+                rels.insert(r.ident.clone(), r);
             }
         }
 
