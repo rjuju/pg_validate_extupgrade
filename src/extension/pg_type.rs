@@ -119,7 +119,7 @@ pub fn snap_one_type(client: &mut Transaction, oid: u32, pgver: u32) -> Type {
     Type {
         ident: typ.typname.clone(),
         typ,
-        relation: relation,
+        relation,
         range: Range::snapshot(client, oid, pgver),
     }
 }
