@@ -193,7 +193,7 @@ impl<'a> SchemaDiff<'a> {
                 }
 
                 for d in diffs {
-                    res.push_str(&format!("{}", d.decode(level + 1),));
+                    res.push_str(&d.decode(level + 1));
                 }
 
                 res
