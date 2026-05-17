@@ -16,15 +16,13 @@ DbStruct! {
 
 impl ExtConfig {
     pub fn snapshot(client: &mut Transaction, extname: &str) -> Self {
-        let sql = format!(
-            "SELECT unnest(extconfig)::regclass::text AS config, \
-                    unnest(extcondition) AS condition \
-                    FROM pg_extension \
-                WHERE extname = $1",
-        );
+        let sql = "SELECT unnest(extconfig)::regclass::text AS config, \
+                          unnest(extcondition) AS condition \
+                   FROM pg_extension \
+                   WHERE extname = $1";
 
         let rows = client
-            .query(&sql[..], &[&extname])
+            .query(sql, &[&extname])
             .expect("Could net get pg_extension rows");
 
         let mut options: BTreeMap<String, String> = BTreeMap::new();

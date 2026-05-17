@@ -100,7 +100,7 @@ impl<'a> Compare<'a> for String {
     }
 
     fn value(&self) -> String {
-        format!("{}", self)
+        self.clone()
     }
 }
 
