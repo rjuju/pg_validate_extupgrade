@@ -251,7 +251,7 @@ impl<'a> SchemaDiff<'a> {
                     res.push_str(&format!("{i} - {} changed to: {}\n", guc, val, i = ind0,));
                 }
 
-                res.push_str("\n");
+                res.push('\n');
 
                 res
             }
