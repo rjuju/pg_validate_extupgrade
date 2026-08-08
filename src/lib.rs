@@ -658,7 +658,7 @@ fn row_to_string(row: &postgres::row::Row, query: &str) -> String {
             VARCHAR => String,
         );
     }
-    line.push_str("\n");
+    line.push('\n');
 
     line
 }
