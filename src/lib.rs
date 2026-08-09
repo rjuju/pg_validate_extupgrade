@@ -478,7 +478,8 @@ impl App {
             "CREATE EXTENSION {} VERSION '{}' {} {} ;",
             self.extname, extver, schema, cascade
         )) {
-            App::error(e.to_string());
+            App::error(format!("could not create {} in version {extver}: {e:?}",
+                self.extname));
         };
 
         let guc_post = Guc::snapshot(client, String::from(extver));
@@ -501,7 +502,8 @@ impl App {
             "ALTER EXTENSION {} UPDATE TO '{}'",
             self.extname, self.to
         )) {
-            App::error(e.to_string());
+            App::error(format!("could not update {} from {} to {}: {e:?}",
+                self.extname, self.from, self.to));
         };
 
         let guc_post = Guc::snapshot(client, guc_ver);
