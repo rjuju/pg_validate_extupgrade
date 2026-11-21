@@ -53,7 +53,14 @@ impl Attribute {
             .expect("Could net get pg_attribute rows");
 
         for row in &rows {
-            atts.push(Attribute::from_row(row));
+            let mut att = Attribute::from_row(row);
+
+            // pg 14.25+, 15.20+, 16.16+, 17.12+, 18.7+ and 19+ introduced a new "pg_attver" option
+            // that is guaranteed to be different, so explicitly remove it if found.
+            if let Some(ref mut options) = att.attoptions {
+                options.prune_pg_attver();
+            }
+            atts.push(att);
         }
 
         atts

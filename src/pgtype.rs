@@ -111,6 +111,14 @@ pub struct ClassOptions {
 }
 
 impl ClassOptions {
+    // Should only be called by Attribute::snapshot.
+    //
+    // pg 14.25+, 15.20+, 16.16+, 17.12+, 18.7+ and 19+ introduced a new "pg_attver" option that is
+    // guaranteed to be different, so explicitly remove it if found.
+    pub fn prune_pg_attver(&mut self) {
+        self.options.remove("pg_attver");
+    }
+
     pub fn from_options(options: BTreeMap<String, String>) -> Self {
         ClassOptions { options }
     }
